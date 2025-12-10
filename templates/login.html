@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACE服務管理後台 - 登入</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            min-height: 500px;
+        }
+
+        .left-panel {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .left-panel h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .left-panel p {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .left-panel .features {
+            margin-top: 40px;
+        }
+
+        .left-panel .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .left-panel .feature-item::before {
+            content: "✓";
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-container {
+            width: 100%;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-header h2 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #999;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #aaa;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .footer-links {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-panel {
+                padding: 40px 30px;
+            }
+
+            .right-panel {
+                padding: 40px 30px;
+            }
+
+            .left-panel h1 {
+                font-size: 24px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .user-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .user-info .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-info .label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .user-info .value {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .token-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #333;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側面板 -->
+        <div class="left-panel">
+            <h1>🚀 ACE服務管理後台</h1>
+            <div class="features">
+                <div class="feature-item">OAuth2.0 JWT 認證</div>
+                <div class="feature-item">安全的密碼加密</div>
+                <div class="feature-item">RESTful API 設計</div>
+                <div class="feature-item">自動 API 文檔</div>
+            </div>
+        </div>
+
+        <!-- 右側表單 -->
+        <div class="right-panel">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>歡迎回來</h2>
+                    <p>請登入您的帳號以繼續</p>
+                </div>
+
+                <!-- Tab 切換 -->
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('login')">登入</div>
+                    <div class="tab" onclick="switchTab('register')">註冊</div>
+                </div>
+
+                <!-- 訊息提示 -->
+                <div id="alert" class="alert"></div>
+
+                <!-- 登入表單 -->
+                <div id="loginForm" class="form-content active">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label for="login-username">使用者名稱</label>
+                            <input type="text" id="login-username" placeholder="請輸入使用者名稱" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">密碼</label>
+                            <input type="password" id="login-password" placeholder="請輸入密碼" required>
+                        </div>
+                        <button type="submit" class="btn" id="loginBtn">
+                            登入
+                        </button>
+                    </form>
+                    
+                    <div class="footer-links">
+                        <a href="/docs" target="_blank">API 文檔</a> | 
+                        <a href="/redoc" target="_blank">ReDoc</a>
+                    </div>
+                </div>
+
+                <!-- 註冊表單 -->
+                <div id="registerForm" class="form-content">
+                    <form onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label for="register-username">使用者名稱 *</label>
+                            <input type="text" id="register-username" placeholder="請輸入使用者名稱" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email">電子郵件</label>
+                            <input type="email" id="register-email" placeholder="請輸入電子郵件">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-fullname">全名</label>
+                            <input type="text" id="register-fullname" placeholder="請輸入全名">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">密碼 *</label>
+                            <input type="password" id="register-password" placeholder="請輸入密碼" required>
+                        </div>
+                        <button type="submit" class="btn" id="registerBtn">
+                            註冊
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 登入成功後顯示 -->
+                <div id="userInfo" style="display: none;">
+                    <div class="user-info">
+                        <h3>✅ 登入成功</h3>
+                        <div class="info-item">
+                            <span class="label">使用者名稱:</span>
+                            <span class="value" id="display-username"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">電子郵件:</span>
+                            <span class="value" id="display-email"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">全名:</span>
+                            <span class="value" id="display-fullname"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">狀態:</span>
+                            <span class="value" id="display-status"></span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <strong style="font-size: 14px; color: #333;">Access Token:</strong>
+                        <div class="token-display" id="display-token"></div>
+                    </div>
+
+                    <button class="btn" onclick="logout()" style="margin-top: 20px;">
+                        登出
+                    </button>
+
+                    <div class="footer-links">
+                        <a href="/docs" target="_blank">前往 API 文檔</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin;
+        let currentToken = null;
+
+        // Tab 切換
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const forms = document.querySelectorAll('.form-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                tabs[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
+            
+            hideAlert();
+        }
+
+        // 顯示訊息
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+        }
+
+        function hideAlert() {
+            const alert = document.getElementById('alert');
+            alert.classList.remove('show');
+        }
+
+        // 登入
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('loginBtn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '登入中<span class="loading"></span>';
+            hideAlert();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login/json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || '登入失敗');
+                }
+                
+                // 儲存 token
+                localStorage.setItem('access_token', data.access_token);
+                
+                showAlert('登入成功！正在跳轉...', 'success');
+                
+                // 跳轉到儀表板
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+                
+            } catch (error) {
+                showAlert(error.message || '登入失敗，請檢查帳號密碼', 'error');
+                btn.disabled = false;
+                btn.textContent = '登入';
+            }
+        }
+
+        // 註冊
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const full_name = document.getElementById('register-fullname').value;
+            const password = document.getElementById('register-password').value;
+            const btn = document.getElementById('registerBtn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '註冊中<span class="loading"></span>';
+            hideAlert();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email: email || null,
+                        full_name: full_name || null,
+                        password,
+                        is_active: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || '註冊失敗');
+                }
+                
+                showAlert('註冊成功！請登入您的帳號', 'success');
+                
+                // 切換到登入頁面
+                setTimeout(() => {
+                    switchTab('login');
+                    document.getElementById('login-username').value = username;
+                }, 1500);
+                
+            } catch (error) {
+                showAlert(error.message || '註冊失敗', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '註冊';
+            }
+        }
+
+        // 取得使用者資訊
+        async function fetchUserInfo(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const user = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error('無法取得使用者資訊');
+                }
+                
+                // 顯示使用者資訊
+                document.getElementById('display-username').textContent = user.username;
+                document.getElementById('display-email').textContent = user.email || '-';
+                document.getElementById('display-fullname').textContent = user.full_name || '-';
+                document.getElementById('display-status').textContent = user.is_active ? '✓ 已啟用' : '✗ 未啟用';
+                document.getElementById('display-token').textContent = token;
+                
+                // 隱藏表單，顯示使用者資訊
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'none';
+                document.querySelector('.tabs').style.display = 'none';
+                document.querySelector('.form-header').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'block';
+                hideAlert();
+                
+            } catch (error) {
+                showAlert('取得使用者資訊失敗', 'error');
+            }
+        }
+
+        // 登出
+        function logout() {
+            currentToken = null;
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.querySelector('.tabs').style.display = 'flex';
+            document.querySelector('.form-header').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            
+            // 清空表單
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            
+            switchTab('login');
+            showAlert('已登出', 'info');
+        }
+
+        // 測試預設帳號提示
+        window.onload = function() {
+            console.log('預設測試帳號: admin / admin123');
+        };
+    </script>
+</body>
+</html>
