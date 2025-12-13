@@ -6,13 +6,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine, Base, connect_to_mongodb, close_mongodb_connection
 from app.routes import auth_router, user_router, system_router
+from app.routes.linebot_routes import router as linebot_router
 from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view
-
-# 建立資料表
-Base.metadata.create_all(bind=engine)
+from app.views.linebot_view import linebot_view
+from app.services.linebot_service import linebot_service
 
 # 建立 FastAPI 應用程式 (MVC 架構)
 app = FastAPI(
@@ -23,6 +23,25 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+
+# 應用程式啟動事件
+@app.on_event("startup")
+async def startup_event():
+    """應用程式啟動時執行"""
+    # 連接到 MongoDB
+    await connect_to_mongodb()
+    # 初始化 LINE Bot 服務
+    await linebot_service.initialize_departments()
+    # SQLAlchemy 建立資料表（如需保留）
+    # Base.metadata.create_all(bind=engine)
+
+
+# 應用程式關閉事件
+@app.on_event("shutdown")
+async def shutdown_event():
+    """應用程式關閉時執行"""
+    await close_mongodb_connection()
 
 # 設定靜態檔案
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -43,6 +62,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(linebot_router)  # LINE Bot 路由
 
 
 # 登入頁面路由
@@ -62,6 +82,19 @@ async def dashboard_page(request: Request):
 async def users_page(request: Request):
     """使用者列表頁面 (需要登入)"""
     return await user_view.user_list_page(request)
+
+
+# LINE Bot 管理介面路由
+@app.get("/linebot/dashboard", response_class=HTMLResponse)
+async def linebot_dashboard(request: Request):
+    """LINE Bot 管理儀表板"""
+    return await linebot_view.linebot_dashboard(request)
+
+
+@app.get("/linebot/departments/{department_code}/tasks", response_class=HTMLResponse)
+async def linebot_department_tasks(request: Request, department_code: str):
+    """部門任務管理頁面"""
+    return await linebot_view.department_tasks(request, department_code)
 
 
 # 全域 404 錯誤處理器

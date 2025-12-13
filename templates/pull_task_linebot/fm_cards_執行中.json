@@ -1,0 +1,217 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "text",
+            "text": "HK 房務部",
+            "color": "#B4B4B4",
+            "weight": "bold",
+            "size": "xs",
+            "gravity": "center",
+            "flex": 1
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "P",
+                "color": "#FFFFFF",
+                "size": "xxs",
+                "weight": "bold",
+                "align": "center"
+              }
+            ],
+            "backgroundColor": "#D93025",
+            "cornerRadius": "10px",
+            "width": "60px",
+            "height": "18px",
+            "justifyContent": "center"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "Room 1205",
+        "weight": "bold",
+        "size": "3xl",
+        "color": "#FFFFFF",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "Guest: Mr. Wang (VIP)",
+        "color": "#C5A065",
+        "size": "sm",
+        "margin": "sm",
+        "weight": "bold"
+      }
+    ],
+    "backgroundColor": "#1A3B5D",
+    "paddingAll": "20px"
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "感動服務 - 生日禮遇",
+        "weight": "bold",
+        "size": "xl",
+        "color": "#1A3B5D"
+      },
+      {
+        "type": "separator",
+        "margin": "lg",
+        "color": "#E5E5E5"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "目前狀態",
+                "size": "sm",
+                "color": "#aaaaaa"
+              }
+            ],
+            "width": "85px",
+            "flex": 0
+          },
+          {
+            "type": "text",
+            "text": "▶ 任務執行中",
+            "size": "sm",
+            "color": "#188038",
+            "flex": 1,
+            "weight": "bold",
+            "wrap": true
+          }
+        ],
+        "margin": "lg"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "預定時間",
+                "size": "sm",
+                "color": "#aaaaaa"
+              }
+            ],
+            "width": "85px",
+            "flex": 0
+          },
+          {
+            "type": "text",
+            "text": "2025-12-12 15:00",
+            "size": "sm",
+            "color": "#333333",
+            "flex": 1,
+            "wrap": true,
+            "weight": "bold"
+          }
+        ],
+        "margin": "md"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "任務內容",
+                "size": "sm",
+                "color": "#aaaaaa"
+              }
+            ],
+            "width": "85px",
+            "flex": 0
+          },
+          {
+            "type": "text",
+            "text": "配送紅酒與手寫卡片，協助佈置毛巾天鵝。",
+            "size": "sm",
+            "color": "#555555",
+            "flex": 1,
+            "wrap": true
+          }
+        ],
+        "margin": "md"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "備註",
+                "size": "sm",
+                "color": "#aaaaaa"
+              }
+            ],
+            "width": "85px",
+            "flex": 0
+          },
+          {
+            "type": "text",
+            "text": "客人對草莓過敏。",
+            "size": "sm",
+            "color": "#FF3333",
+            "flex": 1,
+            "wrap": true
+          }
+        ],
+        "margin": "md"
+      }
+    ],
+    "paddingAll": "20px"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "button",
+        "action": {
+          "type": "uri",
+          "label": "任務完成回報",
+          "uri": "https://line.me"
+        },
+        "style": "primary",
+        "color": "#188038",
+        "height": "sm"
+      }
+    ],
+    "paddingAll": "20px"
+  }
+}
