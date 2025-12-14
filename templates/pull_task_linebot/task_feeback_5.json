@@ -1,0 +1,100 @@
+{
+  "type": "bubble",
+  "size": "mega",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "text",
+            "text": "HK 房務部",
+            "color": "#B4B4B4",
+            "weight": "bold",
+            "size": "xs",
+            "gravity": "center",
+            "flex": 1
+          },
+          {
+            "type": "text",
+            "text": "Room 1205",
+            "weight": "bold",
+            "size": "lg",
+            "color": "#FFFFFF",
+            "gravity": "center",
+            "align": "end",
+            "flex": 1
+          }
+        ]
+      }
+    ],
+    "backgroundColor": "#1A3B5D",
+    "paddingAll": "20px"
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "任務回報 (5/5)",
+        "weight": "bold",
+        "size": "xs",
+        "color": "#C5A065"
+      },
+      {
+        "type": "text",
+        "text": "備註",
+        "weight": "bold",
+        "size": "xl",
+        "color": "#1A3B5D",
+        "margin": "md"
+      },
+      {
+        "type": "text",
+        "text": "請補充其他重要事項，若無可直接略過。",
+        "size": "sm",
+        "color": "#aaaaaa",
+        "margin": "sm",
+        "wrap": true
+      }
+    ],
+    "paddingAll": "20px"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "horizontal",
+    "contents": [
+      {
+        "type": "button",
+        "action": {
+          "type": "uri",
+          "label": "🎤 語音輸入",
+          "uri": "https://line.me/R/nv/audio/"
+        },
+        "style": "primary",
+        "color": "#1A3B5D",
+        "height": "sm"
+      },
+      {
+        "type": "separator",
+        "margin": "md"
+      },
+      {
+        "type": "button",
+        "action": {
+          "type": "uri",
+          "label": "⌨️ 文字輸入",
+          "uri": "https://line.me/R/nv/keyboard/"
+        },
+        "style": "secondary",
+        "margin": "md",
+        "height": "sm"
+      }
+    ],
+    "paddingAll": "20px"
+  }
+}
