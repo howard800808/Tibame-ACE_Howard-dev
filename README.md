@@ -628,6 +628,31 @@ curl -X GET "http://localhost:8000/api/users/me" \
 
 ---
 
+## 測試工具
+
+### LLM 連線測試 (`test_LLM.py`)
+
+此腳本用於測試與 LLM 服務 (`https://llm.89.com.tw`) 的連線與互動。
+
+**功能：**
+1. 建立 Session
+2. 發送測試訊息 ("你好，請幫我查詢台北的天氣")
+3. 生成 GET 模式的 URL (用於除錯)
+4. 執行 POST 請求並顯示回應結果
+
+**使用方式：**
+
+```bash
+python test_LLM.py
+```
+
+**主要變數：**
+- `BASE_URL`: LLM 服務位址
+- `APP_NAME`: 應用程式名稱 (預設: "agents")
+- `USER_ID`: 使用者 ID (預設: "wilsonsu")
+
+---
+
 ## 授權
 
 本專案採用 **MIT 授權**。
