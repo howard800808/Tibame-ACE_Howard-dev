@@ -1,5 +1,5 @@
 # 假設您已經引入了先前定義好的萬用函式
-from flex_templates import create_hotel_task_card
+from templates.pull_task_linebot.flex_templates import create_hotel_task_card
 
 # ==========================================
 # 1. GS 客務部 (Guest Services)

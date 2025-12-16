@@ -14,7 +14,7 @@ async def connect_to_mongodb():
         mongodbClient = AsyncIOMotorClient(settings.MONGODB_URL)
         # 測試連接
         await mongodbClient.admin.command('ping')
-        print(f"✓ 成功連接到 MongoDB: {settings.MONGODB_URL}")
+        print(f"[OK] 成功連接到 MongoDB: {settings.MONGODB_URL}")
         
         # 初始化 Beanie (需要導入所有文檔模型)
         from app.models.user import User
@@ -25,9 +25,9 @@ async def connect_to_mongodb():
             database=mongodbClient[settings.MONGODB_DB_NAME],
             document_models=[User, Department, Task]
         )
-        print(f"✓ Beanie 初始化完成，使用資料庫: {settings.MONGODB_DB_NAME}")
+        print(f"[OK] Beanie 初始化完成，使用資料庫: {settings.MONGODB_DB_NAME}")
     except Exception as e:
-        print(f"✗ MongoDB 連接失敗: {str(e)}")
+        print(f"[ERROR] MongoDB 連接失敗: {str(e)}")
         raise
 
 

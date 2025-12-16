@@ -1,4 +1,4 @@
-def create_hotel_task_card(dept, priority, room, guest, title, content, time, remark, status="PENDING"):
+def create_hotel_task_card(dept, priority, room, guest, title, content, time, remark, status="PENDING", task_id=None):
     """
     五星級飯店派工萬用函式 (支援：待派工 / 執行中 / 已完成)
     
@@ -175,9 +175,9 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
           {
             "type": "button",
             "action": {
-              "type": "uri",
-              "label": s_conf["btn_label"], # [變數] 按鈕文字 (接受/完成)
-              "uri": "https://line.me"      # 實際開發時這裡會換成 Postback
+              "type": "postback",
+              "label": s_conf["btn_label"],
+              "data": f"action=task&op={'accept' if status.upper()=='PENDING' else 'complete'}&dept={dept}&room={room}&id={task_id or ''}"
             },
             "style": s_conf["btn_style"],
             "color": s_conf["btn_color"],   # [變數] 按鈕顏色 (藍/綠)

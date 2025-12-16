@@ -8,7 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base, connect_to_mongodb, close_mongodb_connection
 from app.routes import auth_router, user_router, system_router
-from app.routes.linebot_routes import router as linebot_router
+from app.routes.linebot_routes import router as linebot_router, webhook_unified
 from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view
 from app.views.linebot_view import linebot_view
@@ -63,6 +63,10 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
 app.include_router(linebot_router)  # LINE Bot 路由
+
+# [相容性修正] 註冊 /callback 路由以支援舊版 Webhook 設定
+app.add_api_route("/callback", webhook_unified, methods=["POST"])
+
 
 
 # 登入頁面路由
@@ -126,5 +130,5 @@ if __name__ == "__main__":
         "run:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.DEBUG
+        reload=False  # 禁用自動重載，避免服務器重啟
     )

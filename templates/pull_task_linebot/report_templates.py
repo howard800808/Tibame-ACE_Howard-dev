@@ -16,17 +16,17 @@ def create_report_flow_card(step, dept, room, task_id):
             "question": "是否順利完成？",
             "desc": "請確認現場狀況是否符合驗收標準。",
             "buttons": [
-                {"label": "是 (Yes)", "color": "#188038", "style": "primary", "data": f"action=report&step=2&id={task_id}&ans=yes"},
-                {"label": "否 (No)",  "color": "#D93025", "style": "primary", "data": f"action=report&step=2&id={task_id}&ans=no"} # 異常流程
+                {"label": "是 (Yes)", "color": "#188038", "style": "primary", "data": f"action=report&step=1&id={task_id}&ans=yes&room={room}"},
+                {"label": "否 (No)",  "color": "#D93025", "style": "primary", "data": f"action=report&step=1&id={task_id}&ans=no&room={room}"} # 異常流程
             ]
         },
         2: {
             "title": "任務回報 (2/5)",
             "question": "補充說明 / 微調查",
             "desc": "請簡述現場執行狀況或特殊備註。",
-            "buttons": [ # 這裡使用 URI Action
-                {"label": "🎤 語音輸入", "color": "#1A3B5D", "style": "primary", "type": "uri", "uri": "https://line.me/R/nv/audio/"},
-                {"label": "⌨️ 文字輸入", "color": "#B4B4B4", "style": "secondary", "type": "uri", "uri": "https://line.me/R/nv/keyboard/"}
+          "buttons": [
+            {"label": "🎤 語音輸入", "color": "#1A3B5D", "style": "primary", "data": f"action=report&step=2&id={task_id}&ans=voice&room={room}"},
+            {"label": "⌨️ 文字輸入", "color": "#B4B4B4", "style": "secondary", "data": f"action=report&step=2&id={task_id}&ans=text&room={room}"}
             ]
         },
         3: {
@@ -34,8 +34,8 @@ def create_report_flow_card(step, dept, room, task_id):
             "question": "與顧客有互動嗎？",
             "desc": "若有遇見客人，後續請簡述互動內容。",
             "buttons": [
-                {"label": "有 (Yes)", "color": "#1A3B5D", "style": "primary",   "data": f"action=report&step=4&id={task_id}&ans=yes"},
-                {"label": "無 (No)",  "color": "#B4B4B4", "style": "secondary", "data": f"action=report&step=4&id={task_id}&ans=no"}
+                {"label": "有 (Yes)", "color": "#1A3B5D", "style": "primary",   "data": f"action=report&step=3&id={task_id}&ans=yes&room={room}"},
+                {"label": "無 (No)",  "color": "#B4B4B4", "style": "secondary", "data": f"action=report&step=3&id={task_id}&ans=no&room={room}"}
             ]
         },
         4: {
@@ -43,18 +43,18 @@ def create_report_flow_card(step, dept, room, task_id):
             "question": "顧客情緒判斷",
             "desc": "請依照觀察，記錄客人當下的情緒反應。",
             "buttons": [
-                {"label": "〇 正向", "color": "#188038", "style": "primary", "data": f"action=report&step=5&id={task_id}&ans=positive"},
-                {"label": "〇 中性", "color": "#5A6A7B", "style": "primary", "data": f"action=report&step=5&id={task_id}&ans=neutral"},
-                {"label": "〇 負向", "color": "#D93025", "style": "primary", "data": f"action=report&step=5&id={task_id}&ans=negative"}
+                {"label": "正向", "color": "#188038", "style": "primary", "data": f"action=report&step=4&id={task_id}&ans=positive&room={room}"},
+                {"label": "中性", "color": "#5A6A7B", "style": "primary", "data": f"action=report&step=4&id={task_id}&ans=neutral&room={room}"},
+                {"label": "負向", "color": "#D93025", "style": "primary", "data": f"action=report&step=4&id={task_id}&ans=negative&room={room}"}
             ]
         },
         5: {
             "title": "任務回報 (5/5)",
             "question": "備註事項",
             "desc": "請補充其他重要事項，若無可直接略過。",
-            "buttons": [ # 這裡使用 URI Action
-                {"label": "🎤 語音輸入", "color": "#1A3B5D", "style": "primary", "type": "uri", "uri": "https://line.me/R/nv/audio/"},
-                {"label": "⌨️ 文字輸入", "color": "#B4B4B4", "style": "secondary", "type": "uri", "uri": "https://line.me/R/nv/keyboard/"}
+          "buttons": [
+            {"label": "✅ 完成", "color": "#188038", "style": "primary", "data": f"action=report&step=5&id={task_id}&ans=done&room={room}"},
+            {"label": "略過", "color": "#B4B4B4", "style": "secondary", "data": f"action=report&step=5&id={task_id}&ans=skip&room={room}"}
             ]
         }
     }
