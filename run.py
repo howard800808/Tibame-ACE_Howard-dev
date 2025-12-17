@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routes import auth_router, user_router, system_router
+from app.routes import auth_router, user_router, system_router, emotion_router, video_router
 from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view
 
@@ -43,6 +43,8 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(emotion_router, prefix="/api")
+app.include_router(video_router, prefix="/api")
 
 
 # 登入頁面路由
@@ -62,6 +64,15 @@ async def dashboard_page(request: Request):
 async def users_page(request: Request):
     """使用者列表頁面 (需要登入)"""
     return await user_view.user_list_page(request)
+
+
+@app.get("/video-analysis", response_class=HTMLResponse)
+async def video_analysis_page(request: Request):
+    """影片情緒分析頁面 (需要登入)"""
+    return templates.TemplateResponse(
+        "video_analysis.html",
+        {"request": request, "title": "影片情緒分析 - ACE服務管理後台"}
+    )
 
 
 # 全域 404 錯誤處理器
