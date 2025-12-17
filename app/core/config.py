@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     OLLAMA_HOST: Optional[str] = None
     OLLAMA_MODEL: Optional[str] = None
     
+    # Google Gemini 配置 (用於 MBTI 分析)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
