@@ -174,26 +174,25 @@ async def broadcast_message(
 
 @router.post("/demo/all/tasks")
 async def send_demo_all_departments_tasks():
-    """測試用：一次廣播 12 部門各自 2 張任務卡"""
+    """測試用：一次廣播 12 部門各自任務卡 (從 MySQL 資料庫)"""
     try:
-        mapping = {
-            "GS": [hotel_task_scenarios.task_gs_1, hotel_task_scenarios.task_gs_2],
-            "HK": [hotel_task_scenarios.task_hk_1, hotel_task_scenarios.task_hk_2],
-            "CON": [hotel_task_scenarios.task_con_1, hotel_task_scenarios.task_con_2],
-            "BP": [hotel_task_scenarios.task_bp_1, hotel_task_scenarios.task_bp_2],
-            "FB": [hotel_task_scenarios.task_fb_1, hotel_task_scenarios.task_fb_2],
-            "CBS": [hotel_task_scenarios.task_cbs_1, hotel_task_scenarios.task_cbs_2],
-            "FS": [hotel_task_scenarios.task_fs_1, hotel_task_scenarios.task_fs_2],
-            "LUR": [hotel_task_scenarios.task_lur_1, hotel_task_scenarios.task_lur_2],
-            "GAE": [hotel_task_scenarios.task_gae_1, hotel_task_scenarios.task_gae_2],
-            "BB": [hotel_task_scenarios.task_bb_1, hotel_task_scenarios.task_bb_2],
-            "AD": [hotel_task_scenarios.task_ad_1, hotel_task_scenarios.task_ad_2],
-            "LA": [hotel_task_scenarios.task_la_1, hotel_task_scenarios.task_la_2],
-        }
-
+        departments = ["GS", "HK", "CON", "BP", "FB", "CBS", "FS", "LUR", "GAE", "BB", "AD", "LA"]
+        
         results = []
-        for dept, bubbles in mapping.items():
+        for dept in departments:
             try:
+                # 從 MySQL 取得任務
+                bubbles = linebot_service.get_tasks_for_department(dept)
+                
+                if not bubbles:
+                    results.append({
+                        "department": dept,
+                        "count": 0,
+                        "sent": False,
+                        "reason": "No tasks found in DB"
+                    })
+                    continue
+
                 carousel = {"type": "carousel", "contents": bubbles}
                 ok = await linebot_service.broadcast_flex_to_department(dept, alt_text=f"{dept} 測試任務", flex_contents=carousel)
                 error_msg = linebot_service.get_last_error(dept) if not ok else ""
@@ -269,48 +268,35 @@ async def seed_tasks_to_db():
 @router.post("/demo/{department_code}/task")
 async def send_demo_single_task(
     department_code: str,
-    index: int = Query(1, ge=1, le=2, description="示範卡片索引（1 或 2）")
+    index: int = Query(1, ge=1, description="示範卡片索引（從 1 開始）")
 ):
-    """測試用：廣播指定部門的一張示範任務卡到 LINE。
-    可用 query 參數 index=1|2 指定要發送的示範卡片。
+    """測試用：廣播指定部門的一張示範任務卡到 LINE (從 MySQL 資料庫)。
+    可用 query 參數 index 指定要發送的示範卡片。
     """
     dept = department_code.upper()
 
-    # 兩張示範卡片的對照表
-    mapping_dual = {
-        "GS": [hotel_task_scenarios.task_gs_1, hotel_task_scenarios.task_gs_2],
-        "HK": [hotel_task_scenarios.task_hk_1, hotel_task_scenarios.task_hk_2],
-        "CON": [hotel_task_scenarios.task_con_1, hotel_task_scenarios.task_con_2],
-        "BP": [hotel_task_scenarios.task_bp_1, hotel_task_scenarios.task_bp_2],
-        "FB": [hotel_task_scenarios.task_fb_1, hotel_task_scenarios.task_fb_2],
-        "CBS": [hotel_task_scenarios.task_cbs_1, hotel_task_scenarios.task_cbs_2],
-        "FS": [hotel_task_scenarios.task_fs_1, hotel_task_scenarios.task_fs_2],
-        "LUR": [hotel_task_scenarios.task_lur_1, hotel_task_scenarios.task_lur_2],
-        "GAE": [hotel_task_scenarios.task_gae_1, hotel_task_scenarios.task_gae_2],
-        "BB": [hotel_task_scenarios.task_bb_1, hotel_task_scenarios.task_bb_2],
-        "AD": [hotel_task_scenarios.task_ad_1, hotel_task_scenarios.task_ad_2],
-        "LA": [hotel_task_scenarios.task_la_1, hotel_task_scenarios.task_la_2],
-    }
+    # 從 MySQL 取得任務
+    bubbles = linebot_service.get_tasks_for_department(dept)
+    
+    if not bubbles:
+        return {"status": "error", "message": f"部門 {dept} 無任務資料"}
 
-    pair = mapping_dual.get(dept)
-    if not pair:
-        return {"status": "error", "message": "未知部門代碼"}
+    if index > len(bubbles):
+        return {"status": "error", "message": f"索引 {index} 超出範圍 (共有 {len(bubbles)} 個任務)"}
 
-    bubble = pair[index - 1]
+    bubble = bubbles[index - 1]
 
     ok = await linebot_service.broadcast_flex_to_department(
-        dept,
-        alt_text=f"{dept} 示範任務 #{index}",
+        dept, 
+        alt_text=f"{dept} 測試任務 {index}", 
         flex_contents=bubble
     )
+    
     if ok:
-        return {"status": "success", "message": f"已廣播 {dept} 第 {index} 張任務卡", "sent": True}
+        return {"status": "success", "message": f"已發送 {dept} 任務 {index}"}
     else:
-        return {
-            "status": "error",
-            "message": linebot_service.get_last_error(dept) or "廣播失敗",
-            "sent": False
-        }
+        error_msg = linebot_service.get_last_error(dept)
+        return {"status": "error", "message": error_msg or "發送失敗"}
 
 @router.post("/demo/{department_code}/tasks")
 async def send_demo_tasks(department_code: str):

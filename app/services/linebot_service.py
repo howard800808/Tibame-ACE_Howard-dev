@@ -3,7 +3,7 @@ from datetime import datetime
 import json  # 新增這行
 
 from linebot import LineBotApi, WebhookHandler
-from linebot.models import TextSendMessage, FlexSendMessage
+from linebot.models import TextSendMessage, FlexSendMessage, QuickReply, QuickReplyButton, MessageAction
 from linebot.exceptions import LineBotApiError
 from beanie import PydanticObjectId
 
@@ -40,6 +40,89 @@ class LineBotService:
         return self.department_bots.get(department_code, (None, None))[1]
 
     # ---------------------- 任務處理 ----------------------
+    def get_tasks_for_department(self, dept_code: str) -> List[dict]:
+        """從 MySQL 取得部門任務並轉換為 Flex Message"""
+        from app.core.database import SessionLocal
+        from app.models.task_sql import HotelTask
+        from templates.pull_task_linebot.flex_templates import create_hotel_task_card
+
+        db = SessionLocal()
+        try:
+            # 取得該部門任務，按 ID 倒序排列 (顯示最新任務)
+            tasks = db.query(HotelTask).filter(HotelTask.dept_code == dept_code).order_by(HotelTask.id.desc()).all()
+            
+            flex_messages = []
+            for task in tasks:
+                # 使用資料庫中的 title 欄位
+                title = task.title if task.title else f"任務 #{task.task_id}"
+                
+                flex_msg = create_hotel_task_card(
+                    dept=f"{task.dept_code} {task.dept_name}",
+                    priority=task.sequence,
+                    room=task.location_code,
+                    guest=f"Room {task.guest_room_id}" if task.guest_room_id else "Guest",
+                    title=title,
+                    content=task.action_item,
+                    time=f"{task.time_start}-{task.time_end}",
+                    remark=task.note,
+                    status=task.status.upper() if task.status else "PENDING",
+                    task_id=task.task_id
+                )
+                
+                # [修正] 確保狀態對應正確 (progress -> PROGRESS, done -> DONE)
+                # 資料庫可能存 'progress' 或 'done'，這裡做標準化
+                s_raw = task.status.lower() if task.status else "pending"
+                s_mapped = "PENDING"
+                if s_raw in ["progress", "in_progress"]:
+                    s_mapped = "PROGRESS"
+                elif s_raw in ["done", "completed"]:
+                    s_mapped = "DONE"
+                
+                flex_msg['body']['contents'][2]['contents'][1]['text'] = {
+                    "PROGRESS": "▶ 任務執行中",
+                    "DONE": "✔ 已完成",
+                    "PENDING": "● 任務未執行"
+                }.get(s_mapped, "● 任務未執行")
+                
+                # 顏色也需要對應
+                flex_msg['body']['contents'][2]['contents'][1]['color'] = {
+                    "PROGRESS": "#188038",
+                    "DONE": "#2C3E50",
+                    "PENDING": "#D93025"
+                }.get(s_mapped, "#D93025")
+                
+                # 按鈕狀態也需要更新 (create_hotel_task_card 已經做了一部分，但我們傳入的 status 參數可能不準)
+                # 重新呼叫一次 create_hotel_task_card 比較保險，或者直接修改 flex_msg
+                # 為了簡單起見，我們直接用正確的 status 參數重新生成
+                
+                flex_msg = create_hotel_task_card(
+                    dept=f"{task.dept_code} {task.dept_name}",
+                    priority=task.sequence,
+                    room=task.location_code,
+                    guest=f"Room {task.guest_room_id}" if task.guest_room_id else "Guest",
+                    title=title,
+                    content=task.action_item,
+                    time=f"{task.time_start}-{task.time_end}",
+                    remark=task.note,
+                    status=s_mapped, # 使用標準化後的狀態
+                    task_id=task.task_id
+                )
+
+                flex_messages.append(flex_msg)
+            
+            return flex_messages
+        except Exception as e:
+            print(f"[ERROR] 取得部門 {dept_code} 任務失敗: {e}")
+            return []
+        finally:
+            db.close()
+
+    def _get_quick_reply(self):
+        """取得通用 Quick Reply 按鈕"""
+        return QuickReply(items=[
+            QuickReplyButton(action=MessageAction(label="重新整理", text="重新整理"))
+        ])
+
     async def handle_text_message(
         self,
         department_code: str,
@@ -51,6 +134,32 @@ class LineBotService:
     ) -> Optional[Task]:
         department = await Department.find_one({"code": department_code})
         if not department:
+            return None
+
+        # [New] 處理 "重新整理" 指令
+        if message_text == "重新整理":
+            print(f"[Command] 部門 {department_code} 收到重新整理請求")
+            bubbles = self.get_tasks_for_department(department_code)
+            
+            if not bubbles:
+                await self.send_reply_message(department_code, reply_token, "目前沒有待辦任務。")
+                return None
+            
+            # 限制 Carousel 最多 12 張卡片 (Line 限制)
+            bubbles = bubbles[:12]
+            carousel = {"type": "carousel", "contents": bubbles}
+            
+            bot_api = self.get_bot_api(department_code)
+            if bot_api:
+                try:
+                    message = FlexSendMessage(
+                        alt_text=f"{department_code} 任務列表", 
+                        contents=carousel,
+                        quick_reply=self._get_quick_reply()
+                    )
+                    bot_api.reply_message(reply_token, message)
+                except Exception as e:
+                    print(f"[Error] 回覆任務列表失敗: {e}")
             return None
 
         priority = self._parse_priority(message_text)
@@ -78,7 +187,7 @@ class LineBotService:
             print(f"回覆失敗: 部門 {department_code} 未初始化")
             return
         try:
-            bot_api.reply_message(reply_token, TextSendMessage(text=message))
+            bot_api.reply_message(reply_token, TextSendMessage(text=message, quick_reply=self._get_quick_reply()))
         except LineBotApiError as e:
             print(f"發送訊息失敗: {e}")
 
@@ -88,6 +197,12 @@ class LineBotService:
             print(f"回覆失敗: 部門 {department_code} 未初始化")
             return False
         try:
+            # 確保最後一則訊息帶有 Quick Reply
+            if messages:
+                last_msg = messages[-1]
+                if hasattr(last_msg, 'quick_reply'):
+                    last_msg.quick_reply = self._get_quick_reply()
+            
             bot_api.reply_message(reply_token, messages)
             return True
         except LineBotApiError as e:
@@ -100,7 +215,7 @@ class LineBotService:
             print(f"推送失敗: 部門 {department_code} 未初始化")
             return
         try:
-            bot_api.push_message(user_id, TextSendMessage(text=message))
+            bot_api.push_message(user_id, TextSendMessage(text=message, quick_reply=self._get_quick_reply()))
         except LineBotApiError as e:
             print(f"推送訊息失敗: {e}")
 
@@ -110,7 +225,7 @@ class LineBotService:
             self.last_errors[department_code] = "Bot not initialized"
             return False
         try:
-            bot_api.broadcast(TextSendMessage(text=message))
+            bot_api.broadcast(TextSendMessage(text=message, quick_reply=self._get_quick_reply()))
             self.last_errors.pop(department_code, None)
             return True
         except LineBotApiError as e:
@@ -124,7 +239,7 @@ class LineBotService:
             self.last_errors[department_code] = "Bot not initialized"
             return False
         try:
-            bot_api.broadcast(FlexSendMessage(alt_text=alt_text, contents=flex_contents))
+            bot_api.broadcast(FlexSendMessage(alt_text=alt_text, contents=flex_contents, quick_reply=self._get_quick_reply()))
             self.last_errors.pop(department_code, None)
             return True
         except LineBotApiError as e:
@@ -137,7 +252,7 @@ class LineBotService:
         if not bot_api:
             return False
         try:
-            bot_api.reply_message(reply_token, FlexSendMessage(alt_text=alt_text, contents=flex_contents))
+            bot_api.reply_message(reply_token, FlexSendMessage(alt_text=alt_text, contents=flex_contents, quick_reply=self._get_quick_reply()))
             return True
         except LineBotApiError as e:
             print(f"回覆 Flex 訊息失敗: {e}")
@@ -167,30 +282,151 @@ class LineBotService:
         return await Task.find(query).sort("-created_at").limit(limit).to_list()
 
     async def update_task_status(self, task_id: str, status: TaskStatus, notes: Optional[str] = None) -> Optional[Task]:
-        task = await Task.get(PydanticObjectId(task_id))
-        if not task:
-            return None
-        task.status = status
-        task.updated_at = datetime.utcnow()
-        if status == TaskStatus.COMPLETED:
-            task.completed_at = datetime.utcnow()
-        if notes:
-            task.notes = notes
-        await task.save()
-        return task
+        # [Modified] 僅使用 MySQL 更新任務狀態，忽略 MongoDB
+        
+        from app.core.database import SessionLocal
+        from app.models.task_sql import HotelTask
+        
+        db = SessionLocal()
+        try:
+            # 嘗試用 task_id (String) 查找
+            sql_task = db.query(HotelTask).filter(HotelTask.task_id == task_id).first()
+            if not sql_task:
+                # 嘗試用 id (Integer) 查找
+                if task_id.isdigit():
+                    sql_task = db.query(HotelTask).filter(HotelTask.id == int(task_id)).first()
+            
+            if sql_task:
+                # 將 TaskStatus enum 轉為字串 (pending, in_progress, completed)
+                # 根據 flex_templates.py 的 STATUS_MAP，狀態碼為 PENDING, PROGRESS, DONE
+                # 但資料庫可能存 'progress' 或 'done'
+                
+                if status == TaskStatus.IN_PROGRESS:
+                    sql_task.status = "progress"
+                elif status == TaskStatus.COMPLETED:
+                    sql_task.status = "done"
+                else:
+                    sql_task.status = "pending"
 
-        status_text = {
-            TaskStatus.PENDING: "待處理",
-            TaskStatus.IN_PROGRESS: "處理中",
-            TaskStatus.COMPLETED: "已完成",
-            TaskStatus.CANCELLED: "已取消",
-        }
-        await self.send_push_message(
-            task.department_code,
-            task.line_user_id,
-            f"📢 任務狀態更新\n\n任務: {task.title}\n狀態: {status_text[status]}" + (f"\n備註: {notes}" if notes else "")
-        )
-        return task
+                if notes:
+                    current_note = sql_task.note or ""
+                    timestamp = datetime.utcnow().strftime('%H:%M')
+                    sql_task.note = f"{current_note}\n[{timestamp}] {notes}".strip()
+                
+                db.commit()
+                db.refresh(sql_task) # 確保取得最新資料
+                
+                # 轉換為 MongoDB Task 的臨時物件 (供 Controller 使用)
+                mapped_priority = TaskPriority.MEDIUM
+                if sql_task.sequence == 'P': mapped_priority = TaskPriority.URGENT
+                elif sql_task.sequence == 'E': mapped_priority = TaskPriority.HIGH
+                
+                mapped_status = TaskStatus.PENDING
+                s_lower = sql_task.status.lower()
+                if s_lower in ['progress', 'in_progress']: mapped_status = TaskStatus.IN_PROGRESS
+                elif s_lower in ['done', 'completed']: mapped_status = TaskStatus.COMPLETED
+
+                dummy_task = Task(
+                    department_code=sql_task.dept_code,
+                    department_name=sql_task.dept_name,
+                    title=sql_task.title,
+                    description=sql_task.action_item,
+                    status=mapped_status,
+                    priority=mapped_priority,
+                    room=sql_task.location_code,
+                    guest=f"Room {sql_task.guest_room_id}",
+                    time_str=f"{sql_task.time_start}-{sql_task.time_end}",
+                    notes=sql_task.note,
+                    task_id=sql_task.task_id
+                )
+                # 賦予一個假的 ObjectId 以免報錯
+                dummy_task.id = PydanticObjectId() 
+                
+                return dummy_task
+            else:
+                print(f"[Warning] MySQL 找不到任務: {task_id}")
+                
+        except Exception as e:
+            print(f"[Error] MySQL 更新失敗: {e}")
+        finally:
+            db.close()
+
+        return None
+        from app.core.database import SessionLocal
+        from app.models.task_sql import HotelTask
+        
+        db = SessionLocal()
+        try:
+            # 嘗試用 task_id (String) 查找
+            sql_task = db.query(HotelTask).filter(HotelTask.task_id == task_id).first()
+            if not sql_task:
+                # 嘗試用 id (Integer) 查找
+                if task_id.isdigit():
+                    sql_task = db.query(HotelTask).filter(HotelTask.id == int(task_id)).first()
+            
+            if sql_task:
+                # 將 TaskStatus enum 轉為字串 (pending, in_progress, completed)
+                status_str = "pending"
+                if status == TaskStatus.IN_PROGRESS:
+                    status_str = "progress" # 注意：HotelTask 可能用 'progress' 或 'in_progress'，需確認
+                elif status == TaskStatus.COMPLETED:
+                    status_str = "done" # 注意：HotelTask 可能用 'done' 或 'completed'
+                
+                # 根據 flex_templates.py 的 STATUS_MAP，狀態碼為 PENDING, PROGRESS, DONE
+                # 但 import_hotel_tasks.py 預設是 'pending'
+                # 讓我們統一使用大寫或符合 STATUS_MAP 的值，或者保持小寫
+                # 檢查 flex_templates.py: status.upper() -> PENDING, PROGRESS, DONE
+                # 所以資料庫存什麼都可以，只要能對應。
+                # 這裡我們存 'progress' 和 'done' 以示區別，或者跟隨 TaskStatus 的 value
+                
+                if status == TaskStatus.IN_PROGRESS:
+                    sql_task.status = "progress"
+                elif status == TaskStatus.COMPLETED:
+                    sql_task.status = "done"
+                else:
+                    sql_task.status = "pending"
+
+                if notes:
+                    sql_task.note = (sql_task.note or "") + f"\n[{datetime.utcnow().strftime('%H:%M')}] {notes}"
+                
+                db.commit()
+                
+                # 為了回傳 Task 物件 (符合介面)，我們需要將 SQL task 轉換為 MongoDB Task 的臨時物件
+                # 這樣 controller 才能繼續運作 (產生 Flex Card)
+                
+                # 轉換邏輯
+                mapped_priority = TaskPriority.MEDIUM
+                if sql_task.sequence == 'P': mapped_priority = TaskPriority.URGENT
+                elif sql_task.sequence == 'E': mapped_priority = TaskPriority.HIGH
+                
+                mapped_status = TaskStatus.PENDING
+                if sql_task.status.lower() == 'progress': mapped_status = TaskStatus.IN_PROGRESS
+                elif sql_task.status.lower() == 'done': mapped_status = TaskStatus.COMPLETED
+
+                dummy_task = Task(
+                    department_code=sql_task.dept_code,
+                    department_name=sql_task.dept_name,
+                    title=sql_task.title,
+                    description=sql_task.action_item,
+                    status=mapped_status,
+                    priority=mapped_priority,
+                    room=sql_task.location_code,
+                    guest=f"Room {sql_task.guest_room_id}",
+                    time_str=f"{sql_task.time_start}-{sql_task.time_end}",
+                    notes=sql_task.note,
+                    task_id=sql_task.task_id # 重要：保留原始 ID
+                )
+                # 賦予一個假的 ObjectId 以免報錯 (雖然這裡不會存入 Mongo)
+                dummy_task.id = PydanticObjectId() 
+                
+                return dummy_task
+                
+        except Exception as e:
+            print(f"[Error] MySQL 更新失敗: {e}")
+        finally:
+            db.close()
+
+        return None
 
     async def send_task_flex_card(self, department_code: str, user_id: Optional[str], task: Task, use_push: bool = True) -> bool:
         bot_api = self.get_bot_api(department_code)
@@ -225,7 +461,11 @@ class LineBotService:
             return False
             
         try:
-            message = FlexSendMessage(alt_text=f"任務: {task.title}", contents=flex_content)
+            message = FlexSendMessage(
+                alt_text=f"任務: {task.title}", 
+                contents=flex_content,
+                quick_reply=self._get_quick_reply()
+            )
             bot_api.reply_message(reply_token, message)
             print(f"[Success] 成功回覆任務卡片 (Token: {reply_token[:10]}...)")
             return True
@@ -242,43 +482,84 @@ class LineBotService:
         if not task_id:
             print("[Report] 失敗: 缺少 task_id")
             return
+            
+        from app.core.database import SessionLocal
+        from app.models.task_sql import HotelTask, TaskReport
+        
+        db = SessionLocal()
         try:
-            task = await Task.get(PydanticObjectId(task_id))
-            if not task:
+            # 驗證任務是否存在
+            sql_task = db.query(HotelTask).filter(HotelTask.task_id == task_id).first()
+            if not sql_task and task_id.isdigit():
+                sql_task = db.query(HotelTask).filter(HotelTask.id == int(task_id)).first()
+                # 如果是用 ID 找到的，校正 task_id
+                if sql_task:
+                    task_id = sql_task.task_id
+            
+            if not sql_task:
                 print(f"[Report] 失敗: 找不到任務 {task_id}")
                 return
             
-            # 紀錄答案
-            new_record = {
-                "step": step,
-                "answer": answer,
-                "recorded_at": datetime.utcnow(),
-            }
-            task.report_answers.append(new_record)
+            # [Modified] 寫入 TaskReport 資料表
+            new_report = TaskReport(
+                task_id=task_id,
+                step=step,
+                answer=answer
+            )
+            db.add(new_report)
             
-            print(f"[Report] 任務 {task.title} - 步驟 {step} 紀錄答案: {answer}")
+            print(f"[Report] 任務 {sql_task.title} - 步驟 {step} 紀錄答案: {answer}")
 
             if step >= 5:
-                task.report_completed = True
-                print(f"[Report] 任務 {task.title} 回報流程完成！")
+                print(f"[Report] 任務 {sql_task.title} 回報流程完成！")
             
-            task.updated_at = datetime.utcnow()
-            await task.save()
+            db.commit()
         except Exception as e:
             print(f"[report] 寫入回報答案失敗 task_id={task_id}: {e}")
+        finally:
+            db.close()
 
     async def get_task_statistics(self, department_code: str) -> dict:
-        total = await Task.find({"department_code": department_code}).count()
-        pending = await Task.find({"department_code": department_code, "status": TaskStatus.PENDING}).count()
-        in_progress = await Task.find({"department_code": department_code, "status": TaskStatus.IN_PROGRESS}).count()
-        completed = await Task.find({"department_code": department_code, "status": TaskStatus.COMPLETED}).count()
-        return {
-            "total": total,
-            "pending": pending,
-            "in_progress": in_progress,
-            "completed": completed,
-            "completion_rate": round((completed / total * 100) if total else 0, 2),
-        }
+        from app.core.database import SessionLocal
+        from app.models.task_sql import HotelTask
+        
+        db = SessionLocal()
+        try:
+            total = db.query(HotelTask).filter(HotelTask.dept_code == department_code).count()
+            
+            # 注意：MySQL 中的狀態可能是 'pending', 'progress', 'done' (小寫)
+            # 或是 'PENDING', 'IN_PROGRESS', 'COMPLETED' (大寫)
+            # 這裡做寬鬆匹配
+            
+            pending = db.query(HotelTask).filter(
+                HotelTask.dept_code == department_code, 
+                HotelTask.status.in_(['pending', 'PENDING'])
+            ).count()
+            
+            in_progress = db.query(HotelTask).filter(
+                HotelTask.dept_code == department_code, 
+                HotelTask.status.in_(['progress', 'in_progress', 'PROGRESS', 'IN_PROGRESS'])
+            ).count()
+            
+            completed = db.query(HotelTask).filter(
+                HotelTask.dept_code == department_code, 
+                HotelTask.status.in_(['done', 'completed', 'DONE', 'COMPLETED'])
+            ).count()
+            
+            return {
+                "total": total,
+                "pending": pending,
+                "in_progress": in_progress,
+                "completed": completed,
+                "completion_rate": round((completed / total * 100) if total else 0, 2),
+            }
+        except Exception as e:
+            print(f"[Error] 取得統計數據失敗: {e}")
+            return {
+                "total": 0, "pending": 0, "in_progress": 0, "completed": 0, "completion_rate": 0
+            }
+        finally:
+            db.close()
 
     def get_last_error(self, department_code: str) -> Optional[str]:
         return self.last_errors.get(department_code)
@@ -298,6 +579,8 @@ class LineBotService:
         def map_status(s: TaskStatus) -> str:
             if s == TaskStatus.IN_PROGRESS:
                 return "PROGRESS"
+            if s == TaskStatus.COMPLETED:
+                return "DONE"
             return "PENDING"
 
         # [修正] 優先使用標準欄位，若無則使用相容性欄位 (舊版資料)

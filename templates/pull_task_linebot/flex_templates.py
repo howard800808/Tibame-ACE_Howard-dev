@@ -1,51 +1,79 @@
-def create_hotel_task_card(dept, priority, room, guest, title, content, time, remark, status="PENDING", task_id=None):
+# -*- coding: utf-8 -*-
+"""
+Project: Hotel Task Management System
+Module: Flex Message Templates
+Description: 通用派工卡片生成模組 (Universal Task Card Template)
+Author: Gemini (Assisted)
+"""
+
+def create_universal_task_card(dept, priority, room, guest, title, content, time, remark, status="PENDING", task_id=None):
     """
-    五星級飯店派工萬用函式 (支援：待派工 / 執行中 / 已完成)
+    生成五星級飯店通用派工卡片 (萬用模板)
     
-    :param status: 關鍵參數! 
-           - "PENDING":  顯示紅色「未執行」，按鈕為藍色「接受派工」
-           - "PROGRESS": 顯示綠色「執行中」，按鈕為綠色「已完成派工」
+    :param dept: 部門名稱 (如 "HK 房務部", "F&B 餐飲")
+    :param priority: 優先級代碼 ("P", "E", "F") - 自動對應顏色
+    :param room: 地點或房號
+    :param guest: 客人稱謂
+    :param title: 任務標題
+    :param content: 任務內容
+    :param time: 預定時間
+    :param remark: 備註事項
+    :param status: 目前狀態 ("PENDING", "PROGRESS", "DONE")
+    :param task_id: 任務 ID (用於 Postback)
+    :return: dict (符合 Line Flex Message 規範的 JSON 物件)
     """
 
-    # --- 1. 優先級設定 (控制 Badge 與 備註顏色) ---
+    # ==========================================
+    # 1. 設定檔 (Configuration) - 集中管理顏色與樣式
+    # ==========================================
+    
+    # 優先級色碼表 (P=紅, E=黃, F=綠)
     PRIORITY_MAP = {
-        "P": {"label": "P", "color": "#D93025"},  # 紅
-        "E": {"label": "E", "color": "#F59E0B"},  # 黃
-        "F": {"label": "F", "color": "#188038"}   # 綠
+        "P": {"color": "#D93025"},  # Red
+        "E": {"color": "#F59E0B"},  # Amber Yellow
+        "F": {"color": "#188038"}   # Green
     }
 
-    # --- 2. 狀態設定 (控制 狀態文字 與 按鈕行為) ---
-    # 這裡就是整合的核心：定義不同狀態下的文字與按鈕樣式
+    # 狀態與按鈕邏輯表
     STATUS_MAP = {
         "PENDING": {
-            "text_label": "● 未執行", 
-            "text_color": "#D93025",       # 紅色文字
-            "btn_label": "接受任務 (Accept)", 
-            "btn_color": "#1A3B5D",        # 藍色按鈕
-            "btn_style": "primary"
+            "label": "● 任務未執行",
+            "color": "#D93025",       # 紅色文字
+            "btn_text": "接受任務 (Accept)",
+            "btn_color": "#1A3B5D",   # 藍色按鈕
+            "op": "accept"
         },
         "PROGRESS": {
-            "text_label": "▶ 任務執行中", 
-            "text_color": "#188038",       # 綠色文字
-            "btn_label": "已完成任務 (Complete)", 
-            "btn_color": "#188038",        # 綠色按鈕 (代表成功/完成)
-            "btn_style": "primary"
+            "label": "▶ 任務執行中",
+            "color": "#188038",       # 綠色文字
+            "btn_text": "任務完成回報 (Report)",
+            "btn_color": "#188038",   # 綠色按鈕
+            "op": "complete"
         },
-        # "DONE": {
-        #     "text_label": "✔ 已完成", 
-        #     "text_color": "#2C3E50",       # 灰色文字
-        #     "btn_label": "查看歸檔 (Archive)", 
-        #     "btn_color": "#B4B4B4",        # 灰色按鈕
-        #     "btn_style": "secondary"
-        # }
+        "DONE": {
+            "label": "✔ 已完成",
+            "color": "#2C3E50",       # 灰色文字
+            "btn_text": "查看歸檔 (Archived)",
+            "btn_color": "#B4B4B4",   # 灰色按鈕
+            "op": "archive"
+        }
     }
 
-    # --- 3. 邏輯處理 ---
-    # 防呆機制：如果找不到代碼，預設回傳 F 或 PENDING
-    p_conf = PRIORITY_MAP.get(priority.upper(), PRIORITY_MAP["F"])
-    s_conf = STATUS_MAP.get(status.upper(), STATUS_MAP["PENDING"])
+    # ==========================================
+    # 2. 邏輯處理 (Logic)
+    # ==========================================
+    
+    # 防呆機制：若輸入未知的代碼，預設為 F (綠) 和 PENDING
+    p_code = priority.upper()
+    p_style = PRIORITY_MAP.get(p_code, PRIORITY_MAP["F"])
+    
+    s_code = status.upper()
+    s_style = STATUS_MAP.get(s_code, STATUS_MAP["PENDING"])
 
-    # --- 4. 生成 Flex Message ---
+    # ==========================================
+    # 3. 視圖生成 (View) - Flex Message JSON 結構
+    # ==========================================
+    
     return {
       "type": "bubble",
       "size": "mega",
@@ -58,43 +86,72 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
             "layout": "horizontal",
             "contents": [
               {
-                "type": "text", "text": dept,
-                "color": "#B4B4B4", "weight": "bold", "size": "xs", "gravity": "center", "flex": 1
+                "type": "text",
+                "text": dept,  # [變數] 部門
+                "color": "#B4B4B4",
+                "weight": "bold",
+                "size": "xs",
+                "gravity": "center",
+                "flex": 1
               },
               {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
                   {
-                    "type": "text", "text": p_conf["label"], # [變數] 優先級 Badge
-                    "color": "#FFFFFF", "size": "xxs", "weight": "bold", "align": "center"
+                    "type": "text",
+                    "text": p_code,  # [變數] 優先級單字 (P/E/F)
+                    "color": "#FFFFFF",
+                    "size": "xs",
+                    "weight": "bold",
+                    "align": "center"
                   }
                 ],
-                "backgroundColor": p_conf["color"], # [變數] 優先級顏色
-                "cornerRadius": "10px", "width": "60px", "height": "18px", "justifyContent": "center"
+                "backgroundColor": p_style["color"],  # [變數] Badge 背景色
+                "cornerRadius": "10px",
+                "width": "30px",
+                "height": "20px",
+                "justifyContent": "center"
               }
             ]
           },
           {
-            "type": "text", "text": room, "weight": "bold", "size": "3xl", "color": "#FFFFFF", "margin": "md"
+            "type": "text",
+            "text": room,  # [變數] 房號/地點
+            "weight": "bold",
+            "size": "3xl",
+            "color": "#FFFFFF",
+            "margin": "md"
           },
           {
-            "type": "text", "text": f"Guest: {guest}", "color": "#C5A065", "size": "sm", "margin": "sm", "weight": "bold"
+            "type": "text",
+            "text": f"Guest: {guest}",  # [變數] 客人
+            "color": "#C5A065",
+            "size": "sm",
+            "margin": "sm",
+            "weight": "bold"
           }
         ],
-        "backgroundColor": "#1A3B5D", "paddingAll": "20px"
+        "backgroundColor": "#1A3B5D",  # 品牌深藍色
+        "paddingAll": "20px"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
           {
-            "type": "text", "text": title, "weight": "bold", "size": "xl", "color": "#1A3B5D"
+            "type": "text",
+            "text": title,  # [變數] 標題
+            "weight": "bold",
+            "size": "xl",
+            "color": "#1A3B5D"
           },
           {
-            "type": "separator", "margin": "lg", "color": "#E5E5E5"
+            "type": "separator",
+            "margin": "lg",
+            "color": "#E5E5E5"
           },
-          # 狀態欄位 (動態變化)
+          # --- 欄位 1: 狀態 ---
           {
             "type": "box",
             "layout": "horizontal",
@@ -105,16 +162,16 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
                 "width": "85px", "flex": 0
               },
               {
-                "type": "text", 
-                "text": s_conf["text_label"],  # [變數] 狀態文字 (未執行/執行中)
-                "size": "sm", 
-                "color": s_conf["text_color"], # [變數] 狀態顏色 (紅/綠)
+                "type": "text",
+                "text": s_style["label"],  # [變數] 狀態文字
+                "size": "sm",
+                "color": s_style["color"], # [變數] 狀態顏色
                 "flex": 1, "weight": "bold", "wrap": True
               }
             ],
             "margin": "lg"
           },
-          # 時間欄位
+          # --- 欄位 2: 時間 ---
           {
             "type": "box",
             "layout": "horizontal",
@@ -125,12 +182,16 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
                 "width": "85px", "flex": 0
               },
               {
-                "type": "text", "text": time, "size": "sm", "color": "#333333", "flex": 1, "wrap": True, "weight": "bold"
+                "type": "text",
+                "text": time,  # [變數] 時間
+                "size": "sm",
+                "color": "#333333",
+                "flex": 1, "wrap": True, "weight": "bold"
               }
             ],
             "margin": "md"
           },
-          # 內容欄位
+          # --- 欄位 3: 內容 ---
           {
             "type": "box",
             "layout": "horizontal",
@@ -141,12 +202,16 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
                 "width": "85px", "flex": 0
               },
               {
-                "type": "text", "text": content, "size": "sm", "color": "#555555", "flex": 1, "wrap": True
+                "type": "text",
+                "text": content,  # [變數] 內容
+                "size": "sm",
+                "color": "#555555",
+                "flex": 1, "wrap": True
               }
             ],
             "margin": "md"
           },
-          # 備註欄位
+          # --- 欄位 4: 備註 ---
           {
             "type": "box",
             "layout": "horizontal",
@@ -157,8 +222,10 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
                 "width": "85px", "flex": 0
               },
               {
-                "type": "text", "text": remark, "size": "sm", 
-                "color": p_conf["color"], # 備註顏色跟隨優先級
+                "type": "text",
+                "text": remark,  # [變數] 備註
+                "size": "sm",
+                "color": p_style["color"], # [變數] 備註顏色跟隨優先級
                 "flex": 1, "wrap": True, "weight": "bold"
               }
             ],
@@ -171,30 +238,21 @@ def create_hotel_task_card(dept, priority, room, guest, title, content, time, re
         "type": "box",
         "layout": "vertical",
         "contents": [
-          # 按鈕 1 (主按鈕：動態變化)
           {
             "type": "button",
             "action": {
               "type": "postback",
-              "label": s_conf["btn_label"],
-              "data": f"action=task&op={'accept' if status.upper()=='PENDING' else 'complete'}&dept={dept}&room={room}&id={task_id or ''}"
+              "label": s_style["btn_text"],
+              "data": f"action=task&op={s_style['op']}&id={task_id}&dept={dept.split(' ')[0]}" if task_id else "action=none"
             },
-            "style": s_conf["btn_style"],
-            "color": s_conf["btn_color"],   # [變數] 按鈕顏色 (藍/綠)
+            "style": "primary",
+            "color": s_style["btn_color"],  # [變數] 按鈕顏色
             "height": "sm"
-          },
-          # 按鈕 2 (固定為問題彙報)
-          # {
-          #   "type": "button",
-          #   "action": {
-          #     "type": "uri", "label": "問題彙報 (Report)", "uri": "https://line.me"
-          #   },
-          #   "style": "secondary",
-          #   "margin": "md",
-          #   "height": "sm",
-          #   "color": "#B4B4B4"
-          # }
+          }
         ],
         "paddingAll": "20px"
       }
     }
+
+# Alias for backward compatibility
+create_hotel_task_card = create_universal_task_card

@@ -15,8 +15,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # 資料庫配置 (SQLAlchemy - 保留備用)
-    DATABASE_URL: str = "sqlite:///./admin.db"
+    # 資料庫配置 (SQLAlchemy)
+    # DATABASE_URL: str = "sqlite:///./admin.db"
+    DATABASE_URL: str = "mysql+pymysql://root:1234@localhost:3306/tibame_ace_db"
     SQLALCHEMY_MAX_OVERFLOW: Optional[int] = None
     SQLALCHEMY_WARN_20: Optional[int] = None
     DATABASE_POOL_CONNECTION_MIN: Optional[int] = None

@@ -260,12 +260,13 @@ class LineBotController:
                                 # 一次發送多則訊息
                                 await linebot_service.reply_messages(department_code, reply_token, messages)
                             else:
-                                # 其他操作 (如 accept)，只回覆更新後的任務卡
+                                # 其他操作 (如 accept)，只回覆更新後的任務卡，並提示可以使用重新整理
                                 await linebot_service.send_task_flex_reply(
                                     department_code,
                                     reply_token,
                                     updated
                                 )
+                                # 這裡可以選擇是否要額外發送文字提示，但因為 Quick Reply 已經常駐，所以使用者可以直接點擊
                             return
                     else:
                         print(f"[任務狀態更新] 未知的操作: {op}")
