@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Bot 管理 - ACE 服務管理後台</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .department-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .department-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .department-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .department-code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .department-name {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .department-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .status-active {
+            background-color: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-inactive {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 LINE Bot 管理中心</h1>
+        <p>管理 12 個部門的 LINE Bot 任務系統</p>
+        
+        <div id="departments" class="department-grid">
+            <div class="loading">載入中...</div>
+        </div>
+    </div>
+
+    <script>
+        // 部門資訊
+        const departments = [
+            { code: 'GS', name: '客務部', description: '前台接待與客戶服務' },
+            { code: 'HK', name: '房務部', description: '客房清潔與整理' },
+            { code: 'CON', name: '門房諮詢', description: '門房服務與諮詢' },
+            { code: 'BP', name: '烘焙點心房', description: '烘焙與點心製作' },
+            { code: 'FB', name: '餐飲', description: '餐飲服務' },
+            { code: 'CBS', name: '會議宴會', description: '會議與宴會服務' },
+            { code: 'FS', name: '花房', description: '花藝佈置與維護' },
+            { code: 'LUR', name: '洗衣房與制服室', description: '洗衣與制服管理' },
+            { code: 'GAE', name: '總務工程', description: '總務與工程維護' },
+            { code: 'BB', name: '飲料酒吧', description: '飲料與酒吧服務' },
+            { code: 'AD', name: '美術設計', description: '美術設計與視覺規劃' },
+            { code: 'LA', name: '休閒活動部', description: '休閒活動規劃與執行' }
+        ];
+
+        // 載入部門資料
+        async function loadDepartments() {
+            const container = document.getElementById('departments');
+            container.innerHTML = '';
+
+            for (const dept of departments) {
+                try {
+                    // 取得部門統計資料
+                    const response = await fetch(`/api/linebot/departments/${dept.code}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const stats = data.statistics;
+                        
+                        const card = createDepartmentCard(dept, stats, true);
+                        container.appendChild(card);
+                    } else {
+                        // 部門未初始化或未啟用
+                        const card = createDepartmentCard(dept, null, false);
+                        container.appendChild(card);
+                    }
+                } catch (error) {
+                    console.error(`載入 ${dept.code} 失敗:`, error);
+                    const card = createDepartmentCard(dept, null, false);
+                    container.appendChild(card);
+                }
+            }
+        }
+
+        // 建立部門卡片
+        function createDepartmentCard(dept, stats, isActive) {
+            const card = document.createElement('div');
+            card.className = 'department-card';
+            
+            if (isActive) {
+                card.onclick = () => viewDepartmentTasks(dept.code);
+            }
+
+            const statusBadge = isActive 
+                ? '<span class="status-active">已啟用</span>'
+                : '<span class="status-inactive">未啟用</span>';
+
+            let statsHTML = '';
+            if (stats) {
+                statsHTML = `
+                    <div class="department-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.total}</div>
+                            <div class="stat-label">總任務</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.pending}</div>
+                            <div class="stat-label">待處理</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.in_progress}</div>
+                            <div class="stat-label">處理中</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.completed}</div>
+                            <div class="stat-label">已完成</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="department-code">${dept.code} ${statusBadge}</div>
+                <div class="department-name">${dept.name}</div>
+                <div style="font-size: 14px; color: #666;">${dept.description}</div>
+                ${statsHTML}
+            `;
+
+            return card;
+        }
+
+        // 查看部門任務
+        function viewDepartmentTasks(code) {
+            window.location.href = `/linebot/departments/${code}/tasks`;
+        }
+
+        // 頁面載入時執行
+        window.onload = () => {
+            loadDepartments();
+            // 每 30 秒自動更新
+            setInterval(loadDepartments, 30000);
+        };
+    </script>
+</body>
+</html>
