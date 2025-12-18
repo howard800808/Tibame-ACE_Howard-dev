@@ -14,6 +14,8 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False, comment="加密後的密碼")
     is_active = Column(Boolean, default=True, comment="帳號是否啟用")
     role = Column(String(20), default="user", comment="使用者角色: admin, manager, user")
+    department = Column(String(50), nullable=True, comment="部門: admin, sales, production, warehouse")
+    last_login = Column(DateTime(timezone=True), nullable=True, comment="最後登入時間")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="建立時間")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新時間")
     

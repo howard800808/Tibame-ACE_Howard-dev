@@ -30,7 +30,8 @@ class DashboardView:
             {
                 "request": request,
                 "title": "儀表板 - ACE服務管理後台",
-                "system_name": "ACE服務管理後台"
+                "system_name": "ACE服務管理後台",
+                "header_title": "🏠 ACE服務管理後台"
             }
         )
 

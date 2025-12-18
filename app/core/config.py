@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # Ollama 配置
     OLLAMA_HOST: Optional[str] = None
     OLLAMA_MODEL: Optional[str] = None
+
+    # Google ADK 配置
+    ADK_BASE_URL: str = "https://llm.89.com.tw"
+    ADK_APP_NAME: str = "agents"
     
     class Config:
         env_file = ".env"

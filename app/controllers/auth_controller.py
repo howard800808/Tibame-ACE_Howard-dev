@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.schemas.auth_schema import Token, LoginRequest
@@ -52,6 +52,11 @@ class AuthController:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="使用者未啟用"
             )
+            
+        # 更新最後登入時間 (使用 UTC+8 台北時間)
+        taipei_tz = timezone(timedelta(hours=8))
+        user.last_login = datetime.now(taipei_tz)
+        db.commit()
         
         # 建立 access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

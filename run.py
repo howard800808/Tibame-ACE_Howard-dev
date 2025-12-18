@@ -7,9 +7,9 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routes import auth_router, user_router, system_router
+from app.routes import auth_router, user_router, system_router, adk_router, task_router
 from app.controllers.system_controller import system_controller
-from app.views import auth_view, dashboard_view, user_view
+from app.views import auth_view, dashboard_view, user_view, task_view
 
 # 建立資料表
 Base.metadata.create_all(bind=engine)
@@ -43,6 +43,8 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(adk_router, prefix="/api")
+app.include_router(task_router, prefix="/api")
 
 
 # 登入頁面路由
@@ -62,6 +64,12 @@ async def dashboard_page(request: Request):
 async def users_page(request: Request):
     """使用者列表頁面 (需要登入)"""
     return await user_view.user_list_page(request)
+
+
+@app.get("/tasks", response_class=HTMLResponse)
+async def tasks_page(request: Request):
+    """派工單列表頁面 (需要登入)"""
+    return await task_view.task_list_page(request)
 
 
 # 全域 404 錯誤處理器

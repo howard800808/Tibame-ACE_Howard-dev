@@ -4,561 +4,281 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-        }
-
-        /* 側邊選單樣式 */
-        .sidebar {
-            width: 260px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            transition: all 0.3s;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .sidebar-header h3 {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-header p {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .menu-section {
-            padding: 15px 0;
-        }
-
-        .menu-title {
-            padding: 10px 20px;
-            font-size: 12px;
-            color: #999;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        .menu-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-        }
-
-        .menu-item:hover {
-            background: #f8f9ff;
-            border-left-color: #667eea;
-            color: #667eea;
-        }
-
-        .menu-item.active {
-            background: #f8f9ff;
-            border-left-color: #667eea;
-            color: #667eea;
-            font-weight: bold;
-        }
-
-        .menu-icon {
-            font-size: 18px;
-            width: 20px;
-        }
-
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 0;
-        }
-
-        .content-wrapper {
-            width: 100%;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            color: #667eea;
-            font-size: 28px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .user-details {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-name {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .user-email {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .logout-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .card h2 {
-            color: #667eea;
-            font-size: 20px;
-            margin-bottom: 15px;
-        }
-
-        .stat {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .stat:last-child {
-            border-bottom: none;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .stat-value {
-            color: #333;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .welcome-section {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .welcome-section h2 {
-            color: #667eea;
-            font-size: 32px;
-            margin-bottom: 15px;
-        }
-
-        .welcome-section p {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .quick-actions {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .quick-actions h2 {
-            color: #667eea;
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
-
-        .action-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .action-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/style.css?v={{ range(1, 10000) | random }}">
+    <script src="/static/script.js?v={{ range(1, 10000) | random }}"></script>
 </head>
 <body>
     <!-- 側邊選單 -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h3>🏢 TibaMe</h3>
-            <p id="userRoleDisplay">載入中...</p>
-        </div>
-        
-        <div class="menu-section">
-            <div class="menu-title">主選單</div>
-            <a href="/dashboard" class="menu-item active">
-                <span class="menu-icon">🏠</span>
-                <span>儀表板</span>
-            </a>
-            <a href="/users" class="menu-item" id="menu-users">
-                <span class="menu-icon">👥</span>
-                <span>人員管理</span>
-            </a>
-        </div>
-
-        <div class="menu-section" id="admin-section" style="display: none;">
-            <div class="menu-title">管理功能</div>
-            <a href="#" class="menu-item" id="menu-roles">
-                <span class="menu-icon">🔐</span>
-                <span>角色管理</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-factory">
-                <span class="menu-icon">🏭</span>
-                <span>廠房管理</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-machine">
-                <span class="menu-icon">⚙️</span>
-                <span>機台管理</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-material">
-                <span class="menu-icon">📦</span>
-                <span>品料管理</span>
-            </a>
-        </div>
-
-        <div class="menu-section" id="manager-section" style="display: none;">
-            <div class="menu-title">訂單管理</div>
-            <a href="#" class="menu-item" id="menu-orders">
-                <span class="menu-icon">🛒</span>
-                <span>訂單管理</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-schedule-ing">
-                <span class="menu-icon">📋</span>
-                <span>開工列表ing</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-schedule-plan">
-                <span class="menu-icon">📅</span>
-                <span>製令單排程</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-schedule-close">
-                <span class="menu-icon">✅</span>
-                <span>製令單Close</span>
-            </a>
-        </div>
-
-        <div class="menu-section">
-            <div class="menu-title">工作報告</div>
-            <a href="#" class="menu-item" id="menu-report-all">
-                <span class="menu-icon">📊</span>
-                <span>報工單ALL</span>
-            </a>
-            <a href="#" class="menu-item" id="menu-report">
-                <span class="menu-icon">📝</span>
-                <span>報工單</span>
-            </a>
-        </div>
-    </div>
+    {% include 'sidebar.html' %}
 
     <!-- 主內容區 -->
     <div class="main-content">
         <div class="content-wrapper">
             <div class="container">
                 <!-- Header -->
-        <div class="header">
-            <h1>🏠 {{ system_name }}</h1>
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">?</div>
-                <div class="user-details">
-                    <span class="user-name" id="userName">載入中...</span>
-                    <span class="user-email" id="userEmail">-</span>
-                </div>
-                <button class="logout-btn" onclick="logout()">登出</button>
-            </div>
-        </div>
+                {% include 'top.html' %}
 
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <h2 id="welcomeMessage">歡迎回來! 👋</h2>
-            <p>這是您的管理後台儀表板，您可以從這裡管理所有系統功能。</p>
+        <!-- Main Notify Section -->
+        <div class="emergency-section">
+            <h2>🚨 緊急事件通報</h2>
+            <div class="emergency-grid">
+                <!-- Left: Emergency Table -->
+                <div class="table-responsive">
+                    <table class="emergency-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">客房資料</th>
+                                <th style="width: 35%;">事件內容</th>
+                                <th style="width: 10%;">時間</th>
+                                <th style="width: 15%;">地點</th>
+                                <th style="width: 20%;">AI自動派工</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>205 房 - 陳先生</td>
+                                <td><span class="tag tag-urgent">跌倒偵測</span> 客人於浴室滑倒</td>
+                                <td>10:23</td>
+                                <td>205 浴室</td>
+                                <td><button class="btn-dispatch status-pending" onclick="toggleDispatchStatus(this)">待派工</button></td>
+                            </tr>
+                            <tr>
+                                <td>VIP 廳 - 林小姐</td>
+                                <td><span class="tag tag-warning">情緒激動</span> 偵測到爭吵聲</td>
+                                <td>09:45</td>
+                                <td>大廳酒吧</td>
+                                <td><button class="btn-dispatch status-pending" onclick="toggleDispatchStatus(this)">待派工</button></td>
+                            </tr>
+                            <tr>
+                                <td>302 房 - 張先生</td>
+                                <td><span class="tag tag-info">呼叫服務</span> 客人請求協助</td>
+                                <td>09:30</td>
+                                <td>302 客房</td>
+                                <td><button class="btn-dispatch status-pending" onclick="toggleDispatchStatus(this)">待派工</button></td>
+                            </tr>
+                            <tr>
+                                <td>101 房 - 吳先生</td>
+                                <td><span class="tag tag-warning">噪音投訴</span> 隔壁房客喧嘩</td>
+                                <td>09:10</td>
+                                <td>101 客房</td>
+                                <td><button class="btn-dispatch status-pending" onclick="toggleDispatchStatus(this)">待派工</button></td>
+                            </tr>
+                            <tr>
+                                <td>泳池 - 趙小姐</td>
+                                <td><span class="tag tag-urgent">意外受傷</span> 泳池邊滑倒擦傷</td>
+                                <td>08:55</td>
+                                <td>1F 戶外泳池</td>
+                                <td><button class="btn-dispatch status-pending" onclick="toggleDispatchStatus(this)">待派工</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Right: System Status / Shift Info -->
+                <div class="emergency-info-panel">
+                    <h3 style="font-size: 16px; color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                        📊 系統監控與值班
+                    </h3>
+                    <div class="info-row">
+                        <span class="info-label">值班經理</span>
+                        <span class="info-value">Alex Chen (早班)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">系統狀態</span>
+                        <span class="info-value"><span class="status-dot dot-green"></span>正常運作中</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">今日入住率</span>
+                        <span class="info-value">85% (142/168)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">待處理工單</span>
+                        <span class="info-value" style="color: #ffc107;">3 件</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">最後更新</span>
+                        <span class="info-value">10:25:00</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard Stats -->
-        <div class="dashboard">
-            <div class="card">
-                <h2>📊 使用者資訊</h2>
-                <div class="stat">
-                    <span class="stat-label">使用者 ID</span>
-                    <span class="stat-value" id="userId">-</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">使用者名稱</span>
-                    <span class="stat-value" id="userUsername">-</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">全名</span>
-                    <span class="stat-value" id="userFullName">-</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Email</span>
-                    <span class="stat-value" id="userEmailDetail">-</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">帳號狀態</span>
-                    <span class="stat-value" id="userStatus">
-                        <span class="status-badge status-active">載入中</span>
-                    </span>
+        <div class="dashboard-grid">
+            <div class="feature-card">
+                <div class="card-icon">👤</div>
+                <div class="card-content">
+                    <h3>基本資料</h3>
+                    <p>顧客基本資訊</p>
                 </div>
             </div>
-
-            <div class="card">
-                <h2>⏰ 帳號時間</h2>
-                <div class="stat">
-                    <span class="stat-label">建立時間</span>
-                    <span class="stat-value" id="userCreatedAt">-</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">最後更新</span>
-                    <span class="stat-value" id="userUpdatedAt">-</span>
+            <div class="feature-card">
+                <div class="card-icon">🤔</div>
+                <div class="card-content">
+                    <h3>MBTI情緒偵測</h3>
+                    <p>系統自動分析顧客狀態</p>
                 </div>
             </div>
-
-            <div class="card">
-                <h2>🔐 安全資訊</h2>
-                <div class="stat">
-                    <span class="stat-label">認證方式</span>
-                    <span class="stat-value">JWT Token</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Token 有效期</span>
-                    <span class="stat-value">30 分鐘</span>
+            <div class="feature-card">
+                <div class="card-icon">🏪</div>
+                <div class="card-content">
+                    <h3>顧客消費</h3>
+                    <p>記錄姓名、餐廳、房號</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <h2>⚡ 快速操作</h2>
-            <div class="action-buttons">
-                <a href="/api/users/me" class="action-btn">查看個人資料</a>
-                <a href="/api/docs" class="action-btn">API 文檔</a>
-                <a href="/api/health" class="action-btn">系統健康檢查</a>
-                <button class="action-btn" onclick="refreshToken()">重新整理 Token</button>
-            </div>
+            <div class="feature-card">
+                <div class="card-icon">🙋</div>
+                <div class="card-content">
+                    <h3>顧客需求</h3>
+                    <p>情境生成任務列表check</p>
+                </div>
             </div>
         </div>
     </div>
-
     <script>
-        function logout() {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_info');
-            alert('已成功登出!');
-            window.location.href = '/login';
-        }
-
-        function refreshToken() {
-            alert('請重新登入以獲取新的 Token');
-            window.location.href = '/login';
-        }
-
-        // 檢查 Token 和權限
-        window.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('access_token');
-            
-            // Token 檢查
-            if (!token) {
-                alert('未偵測到登入憑證，請先登入');
-                window.location.href = '/login';
-                return;
-            }
-
-            // 驗證 Token 有效性
-            fetch('/api/users/me', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Token 已過期或無效');
-                }
-                return response.json();
-            })
-            .then(userData => {
-                // 儲存使用者資訊
-                localStorage.setItem('user_info', JSON.stringify(userData));
-                
-                // 更新頁面資料
-                updatePageData(userData);
-                
-                // 根據角色顯示選單
-                const userRole = userData.role || 'user';
-                updateMenuByRole(userRole);
-            })
-            .catch(error => {
-                console.error('驗證失敗:', error);
-                alert('登入憑證已過期，請重新登入');
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('user_info');
-                window.location.href = '/login';
-            });
-        });
-
-        // 根據角色更新選單顯示
-        function updateMenuByRole(role) {
-            const adminSection = document.getElementById('admin-section');
-            const managerSection = document.getElementById('manager-section');
-            
-            if (role === 'admin') {
-                // 管理員可見所有選單
-                adminSection.style.display = 'block';
-                managerSection.style.display = 'block';
-            } else if (role === 'manager') {
-                // 經理只能看訂單管理
-                adminSection.style.display = 'none';
-                managerSection.style.display = 'block';
-            } else {
-                // 一般使用者只能看基本功能
-                adminSection.style.display = 'none';
-                managerSection.style.display = 'none';
+        // 自動派工按鈕狀態切換
+        function toggleDispatchStatus(btn) {
+            if (btn.classList.contains('status-pending')) {
+                // 待派工 -> 已派工
+                btn.classList.remove('status-pending');
+                btn.classList.add('status-dispatched');
+                btn.textContent = '已派工';
+            } else if (btn.classList.contains('status-dispatched')) {
+                // 已派工 -> 處理中
+                btn.classList.remove('status-dispatched');
+                btn.classList.add('status-processing');
+                btn.textContent = '處理中';
+            } else if (btn.classList.contains('status-processing')) {
+                // 處理中 -> 已完成
+                btn.classList.remove('status-processing');
+                btn.classList.add('status-completed');
+                btn.textContent = '已完成';
+            } else if (btn.classList.contains('status-completed')) {
+                // 已完成 -> 待派工 (循環)
+                btn.classList.remove('status-completed');
+                btn.classList.add('status-pending');
+                btn.textContent = '待派工';
             }
         }
+
+        // 定義驗證成功後的回調函數
+        window.onAuthSuccess = function(userData) {
+            updatePageData(userData);
+        };
 
         // 更新頁面資料
         function updatePageData(user) {
-            // 更新角色顯示
-            document.getElementById('userRoleDisplay').textContent = (user.role || 'user').toUpperCase();
-            
             // 更新頭部資訊
             document.getElementById('userAvatar').textContent = user.username[0].toUpperCase();
             document.getElementById('userName').textContent = user.full_name || user.username;
             document.getElementById('userEmail').textContent = user.email || '未設定 Email';
             
-            // 更新歡迎訊息
-            document.getElementById('welcomeMessage').textContent = 
-                `歡迎回來, ${user.full_name || user.username}! 👋`;
+            if (user.last_login) {
+                const lastLogin = new Date(user.last_login).toLocaleString('zh-TW');
+                document.getElementById('userLastLogin').textContent = '最後登入: ' + lastLogin;
+            } else {
+                document.getElementById('userLastLogin').textContent = '最後登入: 首次登入';
+            }
+
+            // 載入緊急事件
+            loadEmergencyTasks();
+        }
+
+        // 載入緊急事件列表
+        async function loadEmergencyTasks() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/tasks/emergency', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (!response.ok) throw new Error('無法載入緊急事件');
+                
+                const tasks = await response.json();
+                const tbody = document.querySelector('.emergency-table tbody');
+                
+                if (tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">目前無緊急事件</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = tasks.map(task => {
+                    // 格式化時間 HH:mm
+                    const time = new Date(task.created_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    
+                    // 決定標籤樣式
+                    let tagClass = 'tag-info';
+                    if (task.priority === 'Critical') tagClass = 'tag-urgent';
+                    else if (task.priority === 'High') tagClass = 'tag-warning';
+
+                    // 決定按鈕狀態樣式
+                    let btnClass = 'status-pending';
+                    let btnText = '待派工';
+                    
+                    if (task.status === 'Dispatched') {
+                        btnClass = 'status-dispatched';
+                        btnText = '已派工';
+                    } else if (task.status === 'Processing') {
+                        btnClass = 'status-processing';
+                        btnText = '處理中';
+                    } else if (task.status === 'Completed') {
+                        btnClass = 'status-completed';
+                        btnText = '已完成';
+                    }
+
+                    return `
+                        <tr>
+                            <td>${task.location || '-'}</td>
+                            <td><span class="tag ${tagClass}">${task.title}</span> ${task.description || ''}</td>
+                            <td>${time}</td>
+                            <td>${task.location || '-'}</td>
+                            <td>
+                                <button class="btn-dispatch ${btnClass}" 
+                                    onclick="updateTaskStatus(${task.id}, '${task.status}', this)">
+                                    ${btnText}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('載入緊急事件失敗:', error);
+            }
+        }
+
+        // 更新任務狀態
+        async function updateTaskStatus(taskId, currentStatus, btn) {
+            const statusFlow = {
+                'Pending': 'Dispatched',
+                'Dispatched': 'Processing',
+                'Processing': 'Completed',
+                'Completed': 'Pending'
+            };
             
-            // 更新使用者資訊卡片
-            document.getElementById('userId').textContent = user.id;
-            document.getElementById('userUsername').textContent = user.username;
-            document.getElementById('userFullName').textContent = user.full_name || '未設定';
-            document.getElementById('userEmailDetail').textContent = user.email || '未設定';
-            
-            // 更新狀態
-            const statusHtml = user.is_active 
-                ? '<span class="status-badge status-active">啟用中</span>'
-                : '<span class="status-badge status-inactive">已停用</span>';
-            document.getElementById('userStatus').innerHTML = statusHtml;
-            
-            // 更新時間
-            const createdAt = new Date(user.created_at).toLocaleString('zh-TW');
-            const updatedAt = new Date(user.updated_at).toLocaleString('zh-TW');
-            document.getElementById('userCreatedAt').textContent = createdAt;
-            document.getElementById('userUpdatedAt').textContent = updatedAt;
+            const nextStatus = statusFlow[currentStatus] || 'Pending';
+            const token = localStorage.getItem('access_token');
+
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/status?status=${nextStatus}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (response.ok) {
+                    // 重新載入列表以更新顯示
+                    loadEmergencyTasks();
+                } else {
+                    alert('更新狀態失敗');
+                }
+            } catch (error) {
+                console.error('更新狀態錯誤:', error);
+                alert('系統錯誤');
+            }
         }
     </script>
 </body>
