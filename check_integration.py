@@ -83,9 +83,7 @@ def check_file_structure():
         'init_linebot_departments.py',
         'LINEBOT_README.md',
         'LINEBOT_QUICKSTART.md',
-        'PROJECT_STRUCTURE.md',
-        'DEPLOYMENT_CHECKLIST.md',
-        'INTEGRATION_SUMMARY.md',
+        'LINEBOT_PROJECT_STRUCTURE.md',
     ]
     
     all_ok = True

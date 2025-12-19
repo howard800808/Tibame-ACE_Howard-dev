@@ -18,6 +18,8 @@
 
 ---
 
+> LineBot 與任務字卡（Flex）功能請參考統一指南：[LINEBOT_GUIDE.md](LINEBOT_GUIDE.md)
+
 ## 專案概述
 
 ACE服務管理後台採用 **MVC (Model-View-Controller)** 架構,將資料驗證 (Schemas) 與視圖渲染 (Views) 分離:

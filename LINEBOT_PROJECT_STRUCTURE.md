@@ -38,8 +38,7 @@ templates/
 
 ### 文檔
 ```
-LINEBOT_README.md               ✨ 新建 - 完整使用說明
-LINEBOT_QUICKSTART.md           ✨ 新建 - 快速開始指南
+LINEBOT_GUIDE.md               ✨ 單一整合指南（架構/設定/API/排錯）
 ```
 
 ## 🔄 工作流程
@@ -256,8 +255,7 @@ Task 記錄 (MongoDB)
 
 ## 📚 參考文檔
 
-- [LINEBOT_README.md](./LINEBOT_README.md) - 完整功能說明
-- [LINEBOT_QUICKSTART.md](./LINEBOT_QUICKSTART.md) - 快速開始指南
+- [LINEBOT_GUIDE.md](./LINEBOT_GUIDE.md) - 單一整合指南
 - [LINE Messaging API](https://developers.line.biz/en/docs/messaging-api/)
 - [FastAPI 文檔](https://fastapi.tiangolo.com/)
 - [Beanie ODM](https://beanie-odm.dev/)
