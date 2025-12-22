@@ -1,9 +1,6 @@
-from beanie import Document, Indexed
-from pydantic import Field, EmailStr
-from datetime import datetime
-from typing import Optional
-from bson import ObjectId
-
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.sql import func
+from app.core.database import Base
 
 class User(Base):
     """使用者資料表模型 (Model層)"""

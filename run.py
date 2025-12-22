@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
-from app.core.database import engine, Base, connect_to_mongodb, close_mongodb_connection
+from app.core.database import engine, Base
 from app.routes import auth_router, user_router, system_router, adk_router, task_router
 from app.routes.linebot_routes import router as linebot_router, webhook_unified
 from app.controllers.system_controller import system_controller
@@ -29,19 +29,17 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     """應用程式啟動時執行"""
-    # 連接到 MongoDB
-    await connect_to_mongodb()
     # 初始化 LINE Bot 服務
     await linebot_service.initialize_departments()
-    # SQLAlchemy 建立資料表（如需保留）
-    # Base.metadata.create_all(bind=engine)
+    # SQLAlchemy 建立資料表
+    Base.metadata.create_all(bind=engine)
 
 
 # 應用程式關閉事件
 @app.on_event("shutdown")
 async def shutdown_event():
     """應用程式關閉時執行"""
-    await close_mongodb_connection()
+    pass
 
 # 設定靜態檔案
 app.mount("/static", StaticFiles(directory="static"), name="static")
