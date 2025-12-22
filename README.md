@@ -8,13 +8,14 @@
 
 1. [專案概述](#專案概述)
 2. [架構說明](#架構說明)  
-3. [專案結構](#專案結構)
-4. [快速開始](#快速開始)
-5. [開發指南](#開發指南)
-6. [API 端點](#api-端點)
-7. [環境配置](#環境配置)
-8. [技術棧](#技術棧)
-9. [常見問題](#常見問題)
+3. [LINE Bot 整合](#line-bot-整合)
+4. [專案結構](#專案結構)
+5. [快速開始](#快速開始)
+6. [開發指南](#開發指南)
+7. [API 端點](#api-端點)
+8. [環境配置](#環境配置)
+9. [技術棧](#技術棧)
+10. [常見問題](#常見問題)
 
 ---
 
@@ -27,6 +28,7 @@ ACE服務管理後台採用 **MVC (Model-View-Controller)** 架構,將資料驗�
 ### 核心特色
 
 - ✅ **分層架構**: Routes → Controllers → Services → Models
+- ✅ **LINE Bot 整合**: 支援 12 個部門的自動化任務管理與 Flex Message 互動
 - ✅ **OAuth2.0 JWT**: 安全的認證機制,Token 有效期 30 分鐘
 - ✅ **權限系統**: 基於角色的存取控制 (admin / manager / user)
 - ✅ **前端渲染**: JavaScript 動態載入資料,Token 自動驗證
@@ -65,41 +67,55 @@ API 文檔: http://localhost:8000/docs
 ### 架構流程圖
 
 ```
-        ┌──────────────┐         ┌──────────────┐
-        │  API 請求     │         │  頁面請求     │
-        │  (JSON)      │         │  (HTML)      │
-        └──────┬───────┘         └──────┬───────┘
-               │                        │
-               ↓                        ↓
-        ┌────────────────────────────────────────┐
-        │      Routes Layer (路由層)              │
-        │  • API Routes (JSON 回應)               │
-        │  • Page Routes (HTML 回應)              │
-        └──────┬─────────────────────┬────────────┘
-               │                     │
-               ↓                     ↓
-        ┌─────────────┐       ┌─────────────┐
-        │ Controllers │       │    Views    │
-        │  (業務邏輯)  │       │  (頁面渲染)  │
-        └──────┬──────┘       └──────┬──────┘
-               │                     │
-               ↓                     │
-        ┌─────────────┐              │
-        │  Services   │              │
-        │(資料存取層)  │              │
-        └──────┬──────┘              │
-               │                     │
-               ↓                     │
-        ┌─────────────┐              │
-        │   Models    │              │
-        │ (ORM 模型)   │              │
-        └──────┬──────┘              │
-               │                     │
-               ↓                     │
-        ┌─────────────┐              │
-        │  Database   │              │
-        └──────┬──────┘              │
-               │                     │
+        ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+        │  API 請求     │         │  頁面請求     │         │  LINE Webhook│
+        │  (JSON)      │         │  (HTML)      │         │  (Event)     │
+        └──────┬───────┘         └──────┬───────┘         └──────┬───────┘
+               │                        │                        │
+               ↓                        ↓                        ↓
+        ┌────────────────────────────────────────────────────────────────┐
+        │                   Routes Layer (路由層)                         │
+        │  • API Routes           • Page Routes          • LineBot Routes│
+        └──────┬─────────────────────┬───────────────────────┬───────────┘
+               │                     │                       │
+               ↓                     ↓                       ↓
+        ┌─────────────┐       ┌─────────────┐       ┌──────────────────┐
+        │ Controllers │       │    Views    │       │ LineBotController│
+        │  (業務邏輯)  │       │  (頁面渲染)  │       │   (訊息處理)     │
+        └──────┬──────┘       └──────┬──────┘       └────────┬─────────┘
+               │                     │                       │
+               ↓                     │                       ↓
+        ┌─────────────┐              │              ┌──────────────────┐
+        │  Services   │              │              │  LineBotService  │
+        │(資料存取層)  │              │              │  (Flex Message)  │
+        └──────┬──────┘              │              └────────┬─────────┘
+               │                     │                       │
+               ↓                     │                       ↓
+        ┌─────────────┐              │              ┌──────────────────┐
+        │   Models    │              │              │      Models      │
+        │ (ORM 模型)   │              │              │ (Task/Department)│
+        └──────┬──────┘              │              └────────┬─────────┘
+               │                     │                       │
+               ↓                     │                       ↓
+        ┌─────────────┐              │              ┌──────────────────┐
+        │  Database   │              │              │     Database     │
+        └──────┬──────┘              │              └──────┬───────────┘
+               │                     │                     │
+
+---
+
+## LINE Bot 整合
+
+本系統已完整整合 12 個飯店部門的 LINE Bot 功能，並全面升級至 **LINE Bot SDK v3**，提供更穩定且強大的 Messaging API 支援。
+
+詳細說明請參考：[LineBot.md](LineBot.md)
+
+### 主要功能
+- **SDK v3 架構**: 採用最新的 LINE Bot SDK v3，支援異步操作與更嚴謹的型別檢查。
+- **統一 Webhook**: 所有部門共用單一 Webhook URL，簡化管理。
+- **Flex Message**: 使用豐富的互動式卡片介面，取代傳統文字指令。
+- **自動化流程**: 支援任務指派、狀態更新、完成回報等完整生命週期。
+- **多部門支援**: 獨立管理 GS, HK, FB 等 12 個部門的任務與權限。
                ↓                     ↓
         ┌─────────────┐       ┌─────────────┐
         │   Schemas   │       │  Templates  │
@@ -136,14 +152,20 @@ www/
 │   ├── controllers/      # 🎮 業務邏輯層
 │   │   ├── auth_controller.py
 │   │   ├── user_controller.py
-│   │   └── system_controller.py
+│   │   ├── system_controller.py
+│   │   ├── linebot_controller.py  # (LINE Bot Webhook 處理)
+│   │   └── task_controller.py     # (任務管理邏輯)
 │   │
 │   ├── models/          # 🗄️ ORM 模型層
-│   │   └── user.py      # (含 role 欄位: admin/manager/user)
+│   │   ├── user.py      # (含 role 欄位: admin/manager/user)
+│   │   ├── task.py      # (任務資料模型)
+│   │   └── department.py # (部門設定模型)
 │   │
 │   ├── schemas/         # 📋 API 資料驗證
 │   │   ├── auth_schema.py
-│   │   └── user_schema.py
+│   │   ├── user_schema.py
+│   │   ├── task_schema.py
+│   │   └── linebot_schema.py
 │   │
 │   ├── views/           # 👁️ 頁面渲染層
 │   │   ├── auth_view.py
@@ -153,10 +175,14 @@ www/
 │   ├── routes/          # 🛣️ API 路由層
 │   │   ├── auth_routes.py
 │   │   ├── user_routes.py
-│   │   └── system_routes.py
+│   │   ├── system_routes.py
+│   │   ├── linebot_routes.py      # (LINE Bot 相關路由)
+│   │   └── task_routes.py         # (任務相關路由)
 │   │
 │   ├── services/        # ⚙️ 資料存取層
-│   │   └── user_service.py
+│   │   ├── user_service.py
+│   │   ├── task_service.py
+│   │   └── linebot_service.py     # (LINE Bot 業務邏輯 SDK v3)
 │   │
 │   └── core/            # 🔧 核心配置
 │       ├── config.py
@@ -174,6 +200,7 @@ www/
 │
 ├── run.py               # 🚀 程式入口
 ├── requirements.txt     # 📦 依賴套件
+├── README.md            # 📖 專案說明文檔
 ├── .env                 # 🔐 環境變數
 └── Dockerfile          # 🐳 Docker 配置
 ```
@@ -627,6 +654,31 @@ TOKEN="your_token_here"
 curl -X GET "http://localhost:8000/api/users/me" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+---
+
+## 測試工具
+
+### LLM 連線測試 (`test_LLM.py`)
+
+此腳本用於測試與 LLM 服務 (`https://llm.89.com.tw`) 的連線與互動。
+
+**功能：**
+1. 建立 Session
+2. 發送測試訊息 ("你好，請幫我查詢台北的天氣")
+3. 生成 GET 模式的 URL (用於除錯)
+4. 執行 POST 請求並顯示回應結果
+
+**使用方式：**
+
+```bash
+python test_LLM.py
+```
+
+**主要變數：**
+- `BASE_URL`: LLM 服務位址
+- `APP_NAME`: 應用程式名稱 (預設: "agents")
+- `USER_ID`: 使用者 ID (預設: "wilsonsu")
 
 ---
 

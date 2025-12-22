@@ -1,9 +1,8 @@
-from beanie import Document
-from typing import Optional
-from datetime import datetime
-from pydantic import Field, validator, root_validator
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+from app.core.database import Base
 from enum import Enum
-
 
 class TaskStatus(str, Enum):
     """任務狀態"""
@@ -46,76 +45,44 @@ class TaskPriority(str, Enum):
                 return cls._value2member_map_[lower_val]
         return super()._missing_(value)
 
+class Task(Base):
+    """任務資料表模型"""
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="內部流水號")
+    task_uid = Column(String(50), unique=True, nullable=False, comment="任務編號")
+    title = Column(String(255), nullable=False, comment="任務標題")
+    description = Column(Text, comment="任務詳細描述")
+    location = Column(String(100), nullable=True, comment="發生地點")
+    
+    department = Column(String(50), nullable=True, index=True, comment="負責部門")
+    assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="被指派人員ID")
+    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="通報人員ID")
+    
+    priority = Column(String(20), default="Medium", comment="優先順序")
+    is_emergency = Column(Boolean, default=False, comment="是否為緊急事件")
+    status = Column(String(20), default="Pending", index=True, comment="狀態")
+    
+    line_sent = Column(Boolean, default=False, comment="是否已發送 Line 通知")
+    line_message_id = Column(String(100), nullable=True, comment="Line 訊息 ID")
+    line_sent_at = Column(DateTime, nullable=True, comment="Line 發送時間")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="建立時間")
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新時間")
+    completed_at = Column(DateTime(timezone=True), nullable=True, comment="實際完成時間")
+    due_at = Column(DateTime(timezone=True), nullable=True, comment="預計完成期限")
+
+    # 關聯
+    assignee = relationship("User", foreign_keys=[assignee_id], backref="assigned_tasks")
+    reporter = relationship("User", foreign_keys=[reporter_id], backref="reported_tasks")
 
 
-class Task(Document):
-    """任務資料模型"""
-    
-    department_code: Optional[str] = Field(None, description="部門代碼")
-    department_name: Optional[str] = Field(None, description="部門名稱")
-    
-    # LINE Bot 相關資訊
-    line_user_id: Optional[str] = Field(None, description="LINE 使用者 ID")
-    line_user_name: Optional[str] = Field(None, description="LINE 使用者名稱")
-    
-    # 任務資訊
-    title: str = Field(..., description="任務標題")
-    description: Optional[str] = Field(None, description="任務詳細描述")
-    status: TaskStatus = Field(default=TaskStatus.PENDING, description="任務狀態")
-    priority: TaskPriority = Field(default=TaskPriority.MEDIUM, description="任務優先級")
-    
-    # 時間資訊
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    due_date: Optional[datetime] = Field(None, description="截止日期")
-    completed_at: Optional[datetime] = Field(None, description="完成時間")
-    
-    # 指派與處理
-    assigned_to: Optional[str] = Field(None, description="指派給誰（使用者ID）")
-    assigned_by: Optional[str] = Field(None, description="由誰指派")
-    
-    # 額外資訊
-    notes: Optional[str] = Field(None, description="備註")
-    tags: list[str] = Field(default_factory=list, description="標籤")
+class TaskReport(Base):
+    """任務回報紀錄"""
+    __tablename__ = "task_reports"
 
-    # 回報流程紀錄
-    report_answers: list[dict] = Field(default_factory=list, description="回報流程的答案紀錄")
-    report_completed: bool = Field(default=False, description="回報流程是否完成")
-    
-    # LINE 訊息相關
-    message_id: Optional[str] = Field(None, description="LINE 訊息 ID")
-    message_type: Optional[str] = Field(None, description="訊息類型")
-    original_message: Optional[str] = Field(None, description="原始訊息內容")
-    
-    # [相容性欄位] 支援舊版資料結構 (seed_tasks.py)
-    room: Optional[str] = Field(None, description="房號 (舊版)")
-    guest: Optional[str] = Field(None, description="客人名稱 (舊版)")
-    content: Optional[str] = Field(None, description="內容 (舊版)")
-    time_str: Optional[str] = Field(None, alias="time", description="時間字串 (舊版)")
-    remark: Optional[str] = Field(None, description="備註 (舊版)")
-    dept: Optional[str] = Field(None, description="部門名稱 (舊版)")
-
-    class Settings:
-        name = "tasks"
-        indexes = [
-            "department_code",
-            "status",
-            "priority",
-            "line_user_id",
-            "created_at",
-        ]
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "department_code": "GS",
-                "department_name": "客務部",
-                "line_user_id": "U1234567890abcdef",
-                "line_user_name": "張三",
-                "title": "處理客戶退房問題",
-                "description": "501房客戶反映退房流程有問題",
-                "status": "pending",
-                "priority": "high",
-                "tags": ["退房", "客戶服務"]
-            }
-        }
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    task_id = Column(String(50), index=True, nullable=False, comment="任務編號")
+    step = Column(Integer, nullable=False, comment="回報步驟")
+    answer = Column(Text, comment="回報內容")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="建立時間")

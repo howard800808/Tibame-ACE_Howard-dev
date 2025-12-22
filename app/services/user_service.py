@@ -32,7 +32,9 @@ class UserService:
             email=user.email,
             full_name=user.full_name,
             hashed_password=hashed_password,
-            is_active=user.is_active
+            is_active=user.is_active,
+            role=user.role,
+            department=user.department
         )
         db.add(db_user)
         db.commit()

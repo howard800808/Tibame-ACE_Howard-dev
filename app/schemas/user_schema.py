@@ -10,6 +10,7 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
     role: Optional[str] = "user"  # admin, manager, user
+    department: Optional[str] = None  # admin, sales, production, warehouse
 
 
 class UserCreate(UserBase):
@@ -58,6 +59,7 @@ class User(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    last_login: Optional[datetime] = None
     
     model_config = {
         "from_attributes": True,

@@ -6,11 +6,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
-from app.core.database import engine, Base, connect_to_mongodb, close_mongodb_connection
-from app.routes import auth_router, user_router, system_router
+from app.core.database import engine, Base
+from app.routes import auth_router, user_router, system_router, adk_router, task_router
 from app.routes.linebot_routes import router as linebot_router, webhook_unified
 from app.controllers.system_controller import system_controller
-from app.views import auth_view, dashboard_view, user_view
+from app.views import auth_view, dashboard_view, user_view, task_view
 from app.views.linebot_view import linebot_view
 from app.services.linebot_service import linebot_service
 
@@ -29,19 +29,17 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     """應用程式啟動時執行"""
-    # 連接到 MongoDB
-    await connect_to_mongodb()
     # 初始化 LINE Bot 服務
     await linebot_service.initialize_departments()
-    # SQLAlchemy 建立資料表（如需保留）
-    # Base.metadata.create_all(bind=engine)
+    # SQLAlchemy 建立資料表
+    Base.metadata.create_all(bind=engine)
 
 
 # 應用程式關閉事件
 @app.on_event("shutdown")
 async def shutdown_event():
     """應用程式關閉時執行"""
-    await close_mongodb_connection()
+    pass
 
 # 設定靜態檔案
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -62,6 +60,8 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(adk_router, prefix="/api")
+app.include_router(task_router, prefix="/api")
 app.include_router(linebot_router)  # LINE Bot 路由
 
 # [相容性修正] 註冊 /callback 路由以支援舊版 Webhook 設定
@@ -86,6 +86,12 @@ async def dashboard_page(request: Request):
 async def users_page(request: Request):
     """使用者列表頁面 (需要登入)"""
     return await user_view.user_list_page(request)
+
+
+@app.get("/tasks", response_class=HTMLResponse)
+async def tasks_page(request: Request):
+    """派工單列表頁面 (需要登入)"""
+    return await task_view.task_list_page(request)
 
 
 # LINE Bot 管理介面路由

@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     
     # HK - 房務部
     HK_ACCESS_TOKEN: Optional[str] = "HpQnEQnQkHnJrjUqnDhCf6VjDUbpFo3vfcgQmoIYRodHh41xBqKi5veh0ng/Fpb83O/bwMb2cl3PectuRXnFhAxUAQ9pOXXImUbhMrsDtX/Ojc8sjut7p8tm62eF7p9PBJHm0cjlU+4XvpQlBiukcgdB04t89/1O/w1cDnyilFU="
-    HK_SECRET: Optional[str] = "484246f951afec8dacd6d3ca1f5056b"
+    HK_SECRET: Optional[str] = "6484246f951afec8dacd6d3ca1f5056b"
     
     # CON - 門房諮詢
     CON_ACCESS_TOKEN: Optional[str] = "GgrwJ9o5Ob96ylf70vUr7yM1iJuyAG7UPWCJ0J7hsCrOXxZbKwuXdWSOmBxnP1VPgmfeEDe4NvF3yZQNnGYSVx/Zz/n/1YL6hHUHOx6NzKe/23rXNJYH9Fg0yrSwNri9xhOA4PlZhQBqaqWo1rnnzQdB04t89/1O/w1cDnyilFU="
@@ -92,6 +92,10 @@ class Settings(BaseSettings):
     # Ollama 配置
     OLLAMA_HOST: Optional[str] = None
     OLLAMA_MODEL: Optional[str] = None
+
+    # Google ADK 配置
+    ADK_BASE_URL: str = "https://llm.89.com.tw"
+    ADK_APP_NAME: str = "agents"
     
     class Config:
         env_file = ".env"

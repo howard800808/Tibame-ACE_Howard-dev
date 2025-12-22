@@ -1,0 +1,185 @@
+<!-- 側邊選單組件 -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3>🏢 ACE HOTEL</h3>
+        <p id="sidebarUserRole">載入中...</p>
+        <p id="sidebarUserDept" style="font-size: 10px; opacity: 0.7;"></p>
+    </div>
+    
+    <div class="menu-section">
+        <div class="menu-title">主選單</div>
+        <a href="/dashboard" class="menu-item" id="menu-dashboard">
+            <span class="menu-icon">🏠</span>
+            <span>儀表板</span>
+        </a>
+        <a href="/users" class="menu-item" id="menu-users">
+            <span class="menu-icon">👥</span>
+            <span>人員管理</span>
+        </a>
+    </div>
+    
+    <div class="menu-section">
+        <div class="menu-title">派工管理</div>
+        <a href="/tasks" class="menu-item" id="menu-tasks-all">
+            <span class="menu-icon">📊</span>
+            <span>派工單列表</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-tasks-report">
+            <span class="menu-icon">📝</span>
+            <span>派工單回報</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-acetasks-all">
+            <span class="menu-icon">📊</span>
+            <span>感動派工單列表</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-acetasks-report">
+            <span class="menu-icon">📝</span>
+            <span>感動派工單回報</span>
+        </a>
+    </div>
+
+    <!-- 部門管理功能 (Dept. Only) -->
+    <div class="menu-section" id="section-admin" style="display: none;">
+        <div class="menu-title">部門管理</div>
+        <a href="#" class="menu-item" id="menu-mis">
+            <span class="menu-icon">🔐</span>
+            <span>MIS</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-front-office">
+            <span class="menu-icon">🛎️</span>
+            <span>客務部</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-housekeeping">
+            <span class="menu-icon">🧹</span>
+            <span>房務部</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-concierge">
+            <span class="menu-icon">ℹ️</span>
+            <span>門房諮詢服務中心</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-pastry">
+            <span class="menu-icon">🥐</span>
+            <span>烘焙點心房</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-fb">
+            <span class="menu-icon">🍽️</span>
+            <span>餐飲</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-banquet">
+            <span class="menu-icon">🥂</span>
+            <span>會議宴會</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-florist">
+            <span class="menu-icon">🌸</span>
+            <span>花房</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-laundry">
+            <span class="menu-icon">🧺</span>
+            <span>洗衣房與制服室</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-engineering">
+            <span class="menu-icon">🔧</span>
+            <span>總務工程</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-bar">
+            <span class="menu-icon">🍸</span>
+            <span>飲料酒吧</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-design">
+            <span class="menu-icon">🎨</span>
+            <span>美術設計</span>
+        </a>
+        <a href="#" class="menu-item" id="menu-recreation">
+            <span class="menu-icon">🎾</span>
+            <span>休閒活動部</span>
+        </a>
+    </div>
+
+    <!-- 倉儲/品料管理 (Admin or Warehouse) -->
+    <div class="menu-section" id="section-warehouse" style="display: none;">
+        <div class="menu-title">庫存管理</div>
+        <a href="#" class="menu-item" id="menu-material">
+            <span class="menu-icon">📦</span>
+            <span>預備品管理</span>
+        </a>
+    </div>
+
+    <!-- 訂單預測管理 (PreSales) -->
+    <div class="menu-section" id="section-sales" style="display: none;">
+        <div class="menu-title">預測管理</div>
+        <a href="#" class="menu-item" id="menu-orders">
+            <span class="menu-icon">🛒</span>
+            <span>3個月內近期預測</span>
+        </a>
+    </div>
+
+</div>
+
+<script>
+    // 側邊選單權限控制
+    function initSidebar(userData) {
+        if (!userData) return;
+        
+        const role = userData.role || 'user';
+        const dept = userData.department || '';
+        
+        // 更新顯示資訊
+        const roleEl = document.getElementById('sidebarUserRole');
+        const deptEl = document.getElementById('sidebarUserDept');
+        
+        if (roleEl) roleEl.textContent = role.toUpperCase();
+        if (deptEl && dept) {
+            deptEl.textContent = '部門: ' + dept.toUpperCase();
+        }
+
+        // 權限邏輯
+        const isAdmin = role === 'admin';
+        
+        // 輔助函式：安全地顯示元素
+        const showEl = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        };
+        
+        // 顯示區塊控制
+        if (isAdmin) {
+            showEl('section-admin');
+            showEl('section-production');
+            showEl('section-warehouse');
+            showEl('section-sales');
+        } else {
+            // 依照部門顯示
+            if (dept === 'production' || role === 'manager') {
+                showEl('section-production');
+            }
+            if (dept === 'warehouse') {
+                showEl('section-warehouse');
+            }
+            if (dept === 'sales' || role === 'manager') {
+                showEl('section-sales');
+            }
+        }
+
+        // 設定當前啟動項目
+        const currentPath = window.location.pathname;
+        const menuDashboard = document.getElementById('menu-dashboard');
+        const menuUsers = document.getElementById('menu-users');
+        const menuTasks = document.getElementById('menu-tasks-all');
+
+        if (currentPath === '/dashboard' && menuDashboard) {
+            menuDashboard.classList.add('active');
+        } else if (currentPath === '/users' && menuUsers) {
+            menuUsers.classList.add('active');
+        } else if (currentPath === '/tasks' && menuTasks) {
+            menuTasks.classList.add('active');
+        }
+    }
+
+    // 自動從 localStorage 載入或等待頁面驗證
+    window.addEventListener('DOMContentLoaded', function() {
+        const userInfo = localStorage.getItem('user_info');
+        if (userInfo) {
+            initSidebar(JSON.parse(userInfo));
+        }
+    });
+</script>
