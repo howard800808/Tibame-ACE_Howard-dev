@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影片情緒分析 - ACE服務管理後台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #e8eaf6;
+            border-color: #764ba2;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-text p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .file-info {
+            display: none;
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #2e7d32;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .result-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .emotion-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .emotion-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .emotion-bar-container {
+            flex: 1;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 0 15px;
+            overflow: hidden;
+        }
+
+        .emotion-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .emotion-percentage {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .timeline-container {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .timeline-time {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 80px;
+        }
+
+        .timeline-emotion {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .emotion-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            border: 1px solid #ef5350;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .video-info {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #1565c0;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .emotion-stat {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .emotion-bar-container {
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📹 影片情緒分析</h1>
+            <p>上傳影片，使用 AI 分析人物的面部情緒變化</p>
+        </div>
+
+        <div class="content">
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- 上傳區域 -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📽️</div>
+                <div class="upload-text">
+                    <h2>上傳影片進行分析</h2>
+                    <p>支持格式: MP4, WMV, AVI, MOV, MKV, WebM</p>
+                    <p>最大檔案大小: 500MB</p>
+                    <p style="margin-top: 10px; color: #999;">點擊或拖拽檔案到此處</p>
+                </div>
+                <input type="file" id="videoFile" accept="video/*">
+            </div>
+
+            <!-- 檔案信息 -->
+            <div class="file-info" id="fileInfo">
+                <strong>已選擇檔案:</strong> <span id="fileName"></span> (<span id="fileSize"></span>)
+            </div>
+
+            <!-- 按鈕組 -->
+            <div class="button-group">
+                <button id="uploadBtn" onclick="selectFile()">選擇影片</button>
+                <button id="analyzeBtn" onclick="startAnalysis()" disabled>開始分析</button>
+                <button id="resetBtn" onclick="resetForm()">重新開始</button>
+            </div>
+
+            <!-- 進度條 -->
+            <div class="progress-container" id="progressContainer">
+                <h3>分析進度</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p id="progressText">正在分析影片...</p>
+                </div>
+            </div>
+
+            <!-- 結果區域 -->
+            <div class="results-section" id="resultsSection">
+                <h2>分析結果</h2>
+
+                <!-- 影片資訊 -->
+                <div class="video-info">
+                    <div class="info-item">
+                        <span class="info-label">檔案名稱:</span>
+                        <span class="info-value" id="resultFilename"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">影片時長:</span>
+                        <span class="info-value" id="resultDuration"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">檢測到的人物:</span>
+                        <span class="info-value" id="resultPeopleCount"></span>
+                    </div>
+                </div>
+
+                <!-- 總體情緒 -->
+                <div class="result-card">
+                    <h3>整體主要情緒</h3>
+                    <div class="result-value" id="overallEmotion">-</div>
+                    <p style="color: #666;">信心度: <strong id="overallConfidence">-</strong></p>
+                </div>
+
+                <!-- 情緒統計 -->
+                <div class="result-card">
+                    <h3>情緒分佈統計</h3>
+                    <div id="emotionStats"></div>
+                </div>
+
+                <!-- 情緒時間線 -->
+                <div class="result-card">
+                    <h3>情緒變化時間線</h3>
+                    <div id="timelineContainer"></div>
+                </div>
+
+                <!-- 語音轉文字結果 -->
+                <div class="result-card">
+                    <h3>影片對話內容</h3>
+                    <div id="transcriptionContainer" style="display: none;">
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 8px;">
+                            <p style="color: #667eea; font-weight: bold; margin-bottom: 8px;">✓ 語音轉文字成功</p>
+                            <p style="color: #666; font-size: 14px;">
+                                檢測到 <strong id="speakerCount">-</strong> 位說話人
+                            </p>
+                        </div>
+                        
+                        <!-- 完整轉錄文字 -->
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #333; margin-bottom: 10px; font-size: 14px;">完整對話</h4>
+                            <p id="transcriptionText" style="color: #333; line-height: 1.8; margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px;"></p>
+                        </div>
+                        
+                        <!-- 說話人分段 -->
+                        <div style="margin-bottom: 15px;">
+                            <h4 style="color: #333; margin-bottom: 15px; font-size: 15px; font-weight: 600;">📖 對話文字（按說話人分段）</h4>
+                            <div id="speakerSegments" style="max-height: 500px; overflow-y: auto; border-radius: 8px; background: #fafafa; padding: 15px;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 逐句分段 (備用) -->
+                        <div style="margin-bottom: 15px; display: none;">
+                            <h4 style="color: #333; margin-bottom: 10px; font-size: 14px;">逐句分段</h4>
+                            <div id="transcriptionSegments" style="max-height: 400px; overflow-y: auto; border-left: 3px solid #667eea; padding-left: 15px;"></div>
+                        </div>
+                        
+                        <p style="color: #999; font-size: 12px; margin-top: 10px;">轉錄信心度: <strong id="transcriptionConfidence">-</strong></p>
+                    </div>
+                    <div id="noTranscription" style="color: #999; font-style: italic;">
+                        無法提取音軌或無法進行語音轉文字
+                    </div>
+                </div>
+
+                <!-- 詳細分析按鈕 -->
+                <div class="button-group" style="margin-top: 30px;">
+                    <button onclick="downloadReport()">下載報告</button>
+                    <button onclick="resetForm()">分析新影片</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadSection = document.getElementById('uploadSection');
+        const videoFile = document.getElementById('videoFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let selectedFile = null;
+        let analysisId = null;
+        let token = localStorage.getItem('access_token');
+
+        // 頁面加載時檢查認證
+        document.addEventListener('DOMContentLoaded', () => {
+            // 重新檢查 token 以確保最新值
+            token = localStorage.getItem('access_token');
+            if (!token) {
+                console.warn('No token found. Redirecting to login...');
+                // 重定向到登入頁面
+                window.location.href = '/login?redirect=/video-analysis';
+            } else {
+                console.log('Token found:', token.substring(0, 20) + '...');
+            }
+        });
+
+        // 拖拽上傳
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.style.background = '#e8eaf6';
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.style.background = '#f8f9fa';
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.style.background = '#f8f9fa';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // 點擊上傳
+        uploadSection.addEventListener('click', selectFile);
+
+        function selectFile() {
+            videoFile.click();
+        }
+
+        videoFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            fileInfo.classList.add('show');
+            analyzeBtn.disabled = false;
+        }
+
+        async function startAnalysis() {
+            if (!selectedFile) {
+                showError('請選擇影片檔案');
+                return;
+            }
+
+            if (!token) {
+                showError('請先登入');
+                return;
+            }
+
+            analyzeBtn.disabled = true;
+            progressContainer.classList.add('show');
+            resultsSection.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                // 上傳影片並開始分析
+                const response = await fetch('/api/videos/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    let errorMsg = '上傳失敗';
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.detail || errorMsg;
+                    } catch (e) {
+                        // 無法解析 JSON，使用預設錯誤訊息
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await response.json();
+                analysisId = data.analysis_id;
+
+                // 輪詢檢查進度
+                checkProgress();
+            } catch (error) {
+                showError('分析啟動失敗: ' + error.message);
+                console.error('Upload error:', error);
+                analyzeBtn.disabled = false;
+                progressContainer.classList.remove('show');
+            }
+        }
+
+        async function checkProgress() {
+            if (!analysisId || !token) return;
+
+            try {
+                const response = await fetch(
+                    `/api/videos/analyze/${analysisId}/progress`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('無法取得進度');
+                }
+
+                const data = await response.json();
+                const progress = data.progress;
+
+                // 更新進度條
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressFill').textContent = Math.round(progress) + '%';
+                document.getElementById('progressText').textContent = data.message;
+
+                if (data.status === 'success') {
+                    // 分析完成
+                    progressContainer.classList.remove('show');
+                    displayResults(data);
+                    analyzeBtn.disabled = false;
+                } else if (data.status === 'failed') {
+                    showError('分析失敗: ' + data.message);
+                    progressContainer.classList.remove('show');
+                    analyzeBtn.disabled = false;
+                } else {
+                    // 繼續輪詢
+                    setTimeout(checkProgress, 2000);
+                }
+            } catch (error) {
+                console.error('Progress error:', error);
+                showError('取得進度失敗: ' + error.message);
+                analyzeBtn.disabled = false;
+                progressContainer.classList.remove('show');
+            }
+        }
+
+        async function displayResults(progressData) {
+            try {
+                const response = await fetch(
+                    `/api/videos/analyze/${analysisId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    let errorMsg = '無法取得分析結果';
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.detail || errorMsg;
+                    } catch (e) {
+                        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await response.json();
+
+                // 顯示影片資訊
+                document.getElementById('resultFilename').textContent = data.video_filename;
+                document.getElementById('resultDuration').textContent = 
+                    formatTime(data.duration_seconds) + ` (${data.total_frames} 幀)`;
+                document.getElementById('resultPeopleCount').textContent = 
+                    data.detected_people_count + ' 人';
+
+                // 顯示總體情緒
+                document.getElementById('overallEmotion').textContent = 
+                    translateEmotion(data.overall_dominant_emotion);
+                document.getElementById('overallConfidence').textContent = 
+                    (data.overall_confidence * 100).toFixed(1) + '%';
+
+                // 顯示情緒統計
+                if (data.emotion_statistics && data.emotion_statistics.length > 0) {
+                    let statsHtml = '';
+                    const maxCount = Math.max(...data.emotion_statistics.map(e => e.count));
+                    
+                    data.emotion_statistics.forEach(stat => {
+                        const percentage = stat.percentage || 0;
+                        const barWidth = (stat.count / maxCount) * 100;
+                        
+                        statsHtml += `
+                            <div class="emotion-stat">
+                                <span class="emotion-label">${translateEmotion(stat.emotion)}</span>
+                                <div class="emotion-bar-container">
+                                    <div class="emotion-bar" style="width: ${barWidth}%"></div>
+                                </div>
+                                <span class="emotion-percentage">${percentage.toFixed(1)}%</span>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('emotionStats').innerHTML = statsHtml;
+                }
+
+                // 顯示情緒時間線
+                if (data.emotion_timeline) {
+                    const timeline = JSON.parse(data.emotion_timeline);
+                    if (timeline.emotion_changes && timeline.emotion_changes.length > 0) {
+                        let timelineHtml = '';
+                        
+                        timeline.emotion_changes.forEach(change => {
+                            timelineHtml += `
+                                <div class="timeline-item">
+                                    <div class="timeline-time">${formatTime(change.timestamp)}</div>
+                                    <div class="timeline-emotion">
+                                        <span class="emotion-badge">${translateEmotion(change.emotion)}</span>
+                                        信心度: ${(change.confidence * 100).toFixed(1)}%
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        document.getElementById('timelineContainer').innerHTML = timelineHtml;
+                    }
+                }
+
+                // 顯示語音轉文字結果
+                const transcriptionContainer = document.getElementById('transcriptionContainer');
+                const noTranscription = document.getElementById('noTranscription');
+                
+                if (data.transcription_text && data.transcription_text !== "無法提取或轉錄音軌" && data.transcription_text !== "音頻轉錄服務未配置") {
+                    // 顯示完整轉錄文字
+                    document.getElementById('transcriptionText').textContent = data.transcription_text;
+                    
+                    // 顯示說話人分段信息
+                    if (data.speaker_segments) {
+                        try {
+                            const speakerData = JSON.parse(data.speaker_segments);
+                            const speakerCount = data.speaker_count || speakerData.speaker_count || 1;
+                            document.getElementById('speakerCount').textContent = speakerCount;
+                            
+                            // 生成說話人分段 HTML - 改進版本：清晰的對話格式
+                            let speakersHtml = '';
+                            const speakerColors = {
+                                '男1': '#4A90E2',  // 藍色
+                                '男2': '#357ABD',
+                                '女1': '#E94B8F',  // 粉紅色
+                                '女2': '#D63384',
+                                '未知': '#999999'
+                            };
+                            const speakerMap = {};
+                            const usedSpeakers = new Set();
+                            
+                            if (speakerData.segments && speakerData.segments.length > 0) {
+                                speakerData.segments.forEach((segment, idx) => {
+                                    const speaker = segment.speaker || `未知`;
+                                    usedSpeakers.add(speaker);
+                                    
+                                    // 獲取顏色 (基於性別標籤)
+                                    let color = speakerColors[speaker];
+                                    if (!color) {
+                                        // 對於未列出的說話人，分配顏色
+                                        const colorList = Object.values(speakerColors);
+                                        color = colorList[Array.from(usedSpeakers).indexOf(speaker) % colorList.length];
+                                    }
+                                    
+                                    const startTime = formatTime(segment.start_time || 0);
+                                    const endTime = formatTime(segment.end_time || 0);
+                                    const confidence = ((segment.confidence || 0.85) * 100).toFixed(1);
+                                    const content = segment.content || '';
+                                    
+                                    // 改進的對話顯示格式
+                                    speakersHtml += `
+                                        <div style=\"margin-bottom: 12px; padding: 12px 15px; background: white; border-left: 5px solid ${color}; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.2s;\" 
+                                             onmouseover=\"this.style.boxShadow='0 4px 8px rgba(0,0,0,0.12)'\"
+                                             onmouseout=\"this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)'\">
+                                            <div style=\"display: flex; align-items: center; gap: 10px; margin-bottom: 8px;\">
+                                                <span style=\"color: ${color}; font-weight: bold; font-size: 15px; min-width: 45px;\">🎙️ ${speaker}</span>
+                                                <span style=\"color: #999; font-size: 12px;\">${startTime}</span>
+                                                <span style=\"color: #ddd;\">•</span>
+                                                <span style=\"color: #999; font-size: 11px;\">信心度: ${confidence}%</span>
+                                            </div>
+                                            <p style=\"margin: 0; color: #333; font-size: 15px; line-height: 1.8; padding-left: 0;\">${content}</p>
+                                        </div>
+                                    `;
+                                });
+                                
+                                document.getElementById('speakerSegments').innerHTML = speakersHtml;
+                            }
+                        } catch (e) {
+                            console.log('解析說話人分段失敗，使用備用顯示:', e);
+                        }
+                    }
+                    
+                    // 備用：顯示詳細逐句段落
+                    if (data.transcription_json && data.transcription_json.length > 0) {
+                        let segmentsHtml = '';
+                        
+                        data.transcription_json.forEach((segment, index) => {
+                            const startTime = formatTime(segment.start_time || 0);
+                            const confidence = ((segment.confidence || 0.85) * 100).toFixed(1);
+                            const speaker = segment.speaker || '未知';
+                            
+                            segmentsHtml += `
+                                <div style=\"margin-bottom: 10px; padding: 10px 12px; background-color: #f9f9f9; border-radius: 4px; border-left: 3px solid #667eea;\">
+                                    <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;\">
+                                        <span style=\"color: #667eea; font-weight: bold; font-size: 13px;\">${speaker}</span>
+                                        <span style=\"color: #999; font-size: 11px;\">${startTime} | 信心度: ${confidence}%</span>
+                                    </div>
+                                    <p style=\"margin: 0; color: #333; font-size: 14px; line-height: 1.6;\">${segment.content || segment.speaker || ''}</p>
+                                </div>
+                            `;
+                        });
+                        
+                        document.getElementById('transcriptionSegments').innerHTML = segmentsHtml;
+                    }
+                    
+                    // 顯示整體信心度
+                    if (data.transcription_confidence !== undefined && data.transcription_confidence !== null) {
+                        document.getElementById('transcriptionConfidence').textContent = 
+                            (data.transcription_confidence * 100).toFixed(1) + '%';
+                    }
+                    
+                    transcriptionContainer.style.display = 'block';
+                    noTranscription.style.display = 'none';
+                } else {
+                    transcriptionContainer.style.display = 'none';
+                    noTranscription.style.display = 'block';
+                }
+
+                resultsSection.classList.add('show');
+            } catch (error) {
+                showError('顯示結果失敗: ' + error.message);
+            }
+        }
+
+        function translateEmotion(emotion) {
+            const translations = {
+                'HAPPY': '😊 開心',
+                'SAD': '😢 悲傷',
+                'ANGRY': '😠 憤怒',
+                'CONFUSED': '😕 困惑',
+                'DISGUSTED': '🤢 厭惡',
+                'SURPRISED': '😲 驚訝',
+                'CALM': '😌 平靜',
+                'NEUTRAL': '😐 中立'
+            };
+            return translations[emotion] || emotion;
+        }
+
+        function formatTime(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function downloadReport() {
+            alert('報告下載功能開發中...');
+        }
+
+        function resetForm() {
+            selectedFile = null;
+            analysisId = null;
+            videoFile.value = '';
+            fileInfo.classList.remove('show');
+            progressContainer.classList.remove('show');
+            resultsSection.classList.remove('show');
+            analyzeBtn.disabled = true;
+        }
+
+        // 頁面載入時檢查登入狀態
+        if (!token) {
+            showError('請先登入系統');
+            analyzeBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>
