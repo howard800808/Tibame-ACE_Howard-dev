@@ -7,10 +7,10 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routes import auth_router, user_router, system_router, adk_router, task_router
+from app.routes import auth_router, user_router, system_router, mbti_router, adk_router, task_router
 from app.routes.linebot_routes import router as linebot_router, webhook_unified
 from app.controllers.system_controller import system_controller
-from app.views import auth_view, dashboard_view, user_view, task_view
+from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view
 from app.views.linebot_view import linebot_view
 from app.services.linebot_service import linebot_service
 
@@ -60,13 +60,6 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
-app.include_router(adk_router, prefix="/api")
-app.include_router(task_router, prefix="/api")
-app.include_router(linebot_router)  # LINE Bot 路由
-
-# [相容性修正] 註冊 /callback 路由以支援舊版 Webhook 設定
-app.add_api_route("/callback", webhook_unified, methods=["POST"])
-
 
 
 # 登入頁面路由
@@ -86,25 +79,6 @@ async def dashboard_page(request: Request):
 async def users_page(request: Request):
     """使用者列表頁面 (需要登入)"""
     return await user_view.user_list_page(request)
-
-
-@app.get("/tasks", response_class=HTMLResponse)
-async def tasks_page(request: Request):
-    """派工單列表頁面 (需要登入)"""
-    return await task_view.task_list_page(request)
-
-
-# LINE Bot 管理介面路由
-@app.get("/linebot/dashboard", response_class=HTMLResponse)
-async def linebot_dashboard(request: Request):
-    """LINE Bot 管理儀表板"""
-    return await linebot_view.linebot_dashboard(request)
-
-
-@app.get("/linebot/departments/{department_code}/tasks", response_class=HTMLResponse)
-async def linebot_department_tasks(request: Request, department_code: str):
-    """部門任務管理頁面"""
-    return await linebot_view.department_tasks(request, department_code)
 
 
 # 全域 404 錯誤處理器

@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     ADK_BASE_URL: str = "https://llm.89.com.tw"
     ADK_APP_NAME: str = "agents"
     
+    # Google Gemini 配置 (用於 MBTI 分析)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -6,6 +6,7 @@ ACE服務管理後台 - 視圖層 (Views)
 from .auth_view import auth_view
 from .dashboard_view import dashboard_view
 from .user_view import user_view
+from .mbti_view import mbti_view
 from .task_view import task_view
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "dashboard_view",
     "user_view",
     "task_view"
+    "mbti_view",
 ]
