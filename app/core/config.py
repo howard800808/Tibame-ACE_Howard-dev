@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     
     # Google Gemini 配置 (用於 MBTI 分析)
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3-pro-preview"
     
     class Config:
         env_file = ".env"

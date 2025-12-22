@@ -7,7 +7,9 @@ import sys
 import os
 
 # 添加項目根目錄到路徑
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# 假設此腳本位於 scripts/mbti/ 目錄下，根目錄為 ../../
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
 
 def test_imports():
     """測試所有 MBTI 模組是否可以正確導入"""
@@ -73,8 +75,10 @@ def test_template_exists():
     print("測試前端模板...")
     print("=" * 50)
     
+    # 使用 project_root 定位模板
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
     template_path = os.path.join(
-        os.path.dirname(__file__),
+        project_root,
         'templates',
         'mbti.html'
     )
@@ -117,8 +121,9 @@ def test_requirements():
     print("檢查依賴...")
     print("=" * 50)
     
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
     requirements_path = os.path.join(
-        os.path.dirname(__file__),
+        project_root,
         'requirements.txt'
     )
     

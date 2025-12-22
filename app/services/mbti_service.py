@@ -32,9 +32,11 @@ class MBTIService:
     def __init__(self):
         """初始化 Google Gemini 客戶端"""
         if not settings.GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY 未設置，請在 .env 檔案中設置")
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
+            print("【警告】GEMINI_API_KEY 未設置，MBTI 分析功能將無法使用")
+            self.model = None
+        else:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
     
     def extract_people_from_frames(self, video_path: str, num_frames: int = 5) -> List[Dict]:
         """
@@ -101,6 +103,9 @@ class MBTIService:
         Returns:
             包含多人 MBTI 預測結果和分析的字典
         """
+        if not self.model:
+            raise ValueError("GEMINI_API_KEY 未設置，無法進行分析")
+
         try:
             # 提取影片幀
             frames_data = self.extract_people_from_frames(video_path, num_frames=5)
