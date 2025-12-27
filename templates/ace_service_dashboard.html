@@ -1,0 +1,790 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACE服務管理前台</title>
+    <link rel="stylesheet" href="/static/style.css?v={{ range(1, 100000000) | random }}">
+    <script src="/static/script.js?v={{ range(1, 100000000) | random }}"></script>
+    <style>
+        /* Page Specific Styles */
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        /* Top: Feature Buttons */
+        .features-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #5d3f99 0%, #4a2d80 100%);
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 4px solid #ff6b5b;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+            height: 100%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            gap: 15px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 107, 91, 0.4);
+            background: linear-gradient(135deg, #6a4ba6 0%, #563690 100%);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 0;
+            display: flex;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 107, 91, 0.2);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .feature-description {
+            font-size: 13px;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        /* Bottom: Face Recognition Split Layout */
+        .face-recognition-section {
+            background: linear-gradient(135deg, #5d3f99 0%, #4a2d80 100%);
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 107, 91, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            min-height: 400px;
+        }
+
+        /* Left Column: Camera */
+        .camera-column {
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .camera-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .camera-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-identify {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 14px;
+            min-width: 80px;
+            justify-content: center;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-identify:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-identify.recording {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .camera-feed video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .face-recognition-icon {
+            font-size: 32px;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px dashed rgba(255, 107, 91, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #aaa;
+        }
+
+        /* Right Column: Real-time Info */
+        .info-column {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            max-height: 500px;
+            padding-right: 5px;
+        }
+
+        /* Scrollbar for info-list */
+        .info-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .info-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .info-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .info-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Responsive for Split Layout */
+        @media (max-width: 900px) {
+            .face-recognition-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .features-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .features-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-card {
+                flex-direction: row;
+                text-align: left;
+                padding: 15px;
+                align-items: center;
+                border-bottom: none;
+                border-left: 4px solid #ff6b5b;
+            }
+
+            .feature-icon {
+                margin-bottom: 0;
+                margin-right: 15px;
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+
+            .feature-title {
+                margin-bottom: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="content-wrapper">
+            <div class="container">
+                <!-- Header -->
+                {% include 'top.html' %}
+
+                <!-- Top: Feature Buttons -->
+                <div class="features-section">
+                    <!-- Basic Info -->
+                    <div class="feature-card">
+                        <div class="feature-icon">👤</div>
+                        <div>
+                            <div class="feature-title">基本資料</div>
+                            <div class="feature-description">手動輸入客戶基本資訊</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Inquiry -->
+                    <div class="feature-card">
+                        <div class="feature-icon">💬</div>
+                        <div>
+                            <div class="feature-title">顧客諮詢</div>
+                            <div class="feature-description">記錄姓名、票據、房號</div>
+                        </div>
+                    </div>
+
+                    <!-- MBTI Emotion Detection -->
+                    <div class="feature-card">
+                        <div class="feature-icon">🧠</div>
+                        <div>
+                            <div class="feature-title">MBTI情緒偵測</div>
+                            <div class="feature-description">系統自動分析客人情緒狀態</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Needs -->
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <div>
+                            <div class="feature-title">顧客需求</div>
+                            <div class="feature-description">手動輸入獲得生成部門任務</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: Face Recognition & Info -->
+                <div class="face-recognition-section">
+                    <!-- Left: Camera Feed -->
+                    <div class="camera-column">
+                        <div class="camera-header">
+                            <div class="camera-title">
+                                <span class="face-recognition-icon">👁️</span> 入臉辨識
+                            </div>
+                            <button id="identifyBtn" class="btn-identify">辨識</button>
+                        </div>
+                        <div class="camera-feed">
+                            <video id="webcamVideo" autoplay playsinline muted></video>
+                        </div>
+                    </div>
+
+                    <!-- Right: Real-time Info -->
+                    <div class="info-column">
+                        <div class="info-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span>📊</span> 即時辨識資訊
+                            </div>
+                            <div style="font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                                <span id="statusLabel" style="color: #aaa; font-weight: normal;">辨識狀態:</span>
+                                <span id="statusValue" style="color: #aaa;">等待偵測...</span>
+                            </div>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <div class="info-label" id="emotionLabel">情緒分析</div>
+                                <div class="info-value" id="emotionValue">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label" id="visitorLabel">最近訪客</div>
+                                <div class="info-value" id="visitorValue">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label" id="demographicsLabel">年齡/性別</div>
+                                <div class="info-value" id="demographicsValue">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label" id="featuresLabel">特徵</div>
+                                <div class="info-value" id="featuresValue">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定義驗證成功後的回調函數
+        window.onAuthSuccess = function(userData) {
+            console.log('ACE服務管理前台已載入', userData);
+            // 可以在這裡更新頁面特定的使用者資訊，如果需要的話
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Feature Card Click Events
+            let isMBTIMode = false;
+            const cards = document.querySelectorAll('.feature-card');
+            
+            cards.forEach((card, index) => {
+                card.addEventListener('click', function() {
+                    const titles = ['基本資料', '顧客諮詢', 'MBTI情緒偵測', '顧客需求'];
+                    console.log('點擊功能: ' + titles[index]);
+                    
+                    if (index === 2) { // MBTI情緒偵測
+                        isMBTIMode = true;
+                        stopAnalysis(); // Stop any existing analysis
+                        
+                        // Update UI
+                        document.querySelector('.camera-title').innerHTML = '<span class="face-recognition-icon">🧠</span> MBTI偵測辨識';
+                        
+                        // Update Info Labels
+                        document.getElementById('emotionLabel').textContent = 'MBTI類型';
+                        document.getElementById('demographicsLabel').textContent = '行為特徵';
+                        
+                        // Hide unused fields for MBTI
+                        document.getElementById('visitorLabel').parentElement.style.display = 'none';
+                        document.getElementById('featuresLabel').parentElement.style.display = 'none';
+                        
+                        // Reset Values
+                        resetInfoValues();
+                        
+                    } else {
+                        isMBTIMode = false;
+                        stopAnalysis();
+                        
+                        // Reset UI to default
+                        document.querySelector('.camera-title').innerHTML = '<span class="face-recognition-icon">👁️</span> 入臉辨識';
+                        
+                        // Reset Info Labels
+                        document.getElementById('emotionLabel').textContent = '情緒分析';
+                        document.getElementById('demographicsLabel').textContent = '年齡/性別';
+                        document.getElementById('featuresLabel').textContent = '特徵';
+                        
+                        // Show fields for Face Recognition
+                        document.getElementById('visitorLabel').parentElement.style.display = 'block';
+                        document.getElementById('featuresLabel').parentElement.style.display = 'block';
+                        
+                        resetInfoValues();
+                    }
+                });
+            });
+
+            function resetInfoValues() {
+                document.getElementById('statusValue').textContent = '等待偵測...';
+                document.getElementById('statusValue').style.color = '#aaa';
+                document.getElementById('emotionValue').textContent = '-';
+                document.getElementById('visitorValue').textContent = '-';
+                document.getElementById('demographicsValue').textContent = '-';
+                document.getElementById('featuresValue').textContent = '-';
+            }
+
+            function stopAnalysis() {
+                const btn = document.getElementById('identifyBtn');
+                if (btn.classList.contains('recording')) {
+                    btn.click(); // Toggle off
+                }
+            }
+
+            // Webcam Logic
+            const video = document.getElementById('webcamVideo');
+            const identifyBtn = document.getElementById('identifyBtn');
+            let mediaRecorder = null;
+            let recordedChunks = [];
+            
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(function(stream) {
+                        video.srcObject = stream;
+                    })
+                    .catch(function(err) {
+                        console.error("Webcam error:", err);
+                    });
+            }
+
+            // Identify Button Logic
+            let analysisInterval = null;
+            let mbtiLoopActive = false;
+
+            identifyBtn.addEventListener('click', function() {
+                this.classList.toggle('recording');
+                const isRecording = this.classList.contains('recording');
+                
+                if (isRecording) {
+                    this.innerHTML = '🔴 辨識中...';
+                    document.getElementById('statusValue').textContent = '正在分析...';
+                    
+                    if (isMBTIMode) {
+                        mbtiLoopActive = true;
+                        captureAndAnalyzeMBTI();
+                    } else {
+                        // Start AWS Face Analysis loop
+                        captureAndAnalyze(); // Run immediately
+                        analysisInterval = setInterval(captureAndAnalyze, 1000); // Then every second
+                    }
+                } else {
+                    this.innerHTML = '辨識';
+                    document.getElementById('statusValue').textContent = '等待偵測...';
+                    
+                    if (isMBTIMode) {
+                        mbtiLoopActive = false;
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    } else {
+                        // Stop AWS Face Analysis loop
+                        if (analysisInterval) {
+                            clearInterval(analysisInterval);
+                            analysisInterval = null;
+                        }
+                    }
+                }
+            });
+
+            async function captureAndAnalyzeMBTI() {
+                if (!mbtiLoopActive || !video.srcObject) return;
+
+                const stream = video.srcObject;
+                const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9') 
+                    ? 'video/webm; codecs=vp9' 
+                    : 'video/webm';
+                
+                try {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
+                    recordedChunks = [];
+
+                    mediaRecorder.ondataavailable = function(e) {
+                        if (e.data.size > 0) {
+                            recordedChunks.push(e.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = async function() {
+                        if (!mbtiLoopActive) return;
+
+                        // 錄製停止，進入分析階段：重置按鈕樣式並禁用
+                        const btn = document.getElementById('identifyBtn');
+                        btn.classList.remove('recording');
+                        btn.innerHTML = '辨識';
+                        btn.disabled = true;
+
+                        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                        const formData = new FormData();
+                        formData.append('file', blob, 'capture.webm');
+
+                        console.log('Sending MBTI video chunk...', blob.size);
+                        
+                        // 計算預計時間：每 MB 20 秒
+                        const fileSizeMB = blob.size / (1024 * 1024);
+                        let remainingSeconds = Math.ceil(fileSizeMB * 45);
+                        if (remainingSeconds < 1) remainingSeconds = 1; // 至少 1 秒
+
+                        const statusValue = document.getElementById('statusValue');
+                        statusValue.textContent = `MBTI 分析中... (預計 ${remainingSeconds} 秒)`;
+
+                        const countdownInterval = setInterval(() => {
+                            remainingSeconds--;
+                            if (remainingSeconds > 0) {
+                                statusValue.textContent = `MBTI 分析中... (預計 ${remainingSeconds} 秒)`;
+                            } else {
+                                statusValue.textContent = `MBTI 分析中... (即將完成)`;
+                                clearInterval(countdownInterval);
+                            }
+                        }, 1000);
+
+                        try {
+                            const token = localStorage.getItem('access_token');
+                            const response = await fetch('/api/mbti/analyze-personality', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': 'Bearer ' + token
+                                },
+                                body: formData
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log('MBTI Analysis Result:', data);
+                                updateMBTIDashboard(data);
+                                
+                                // 分析成功，停止循環
+                                mbtiLoopActive = false;
+                            } else {
+                                console.error('MBTI Analysis failed:', response.status);
+                                document.getElementById('statusValue').textContent = '分析失敗';
+                            }
+                        } catch (error) {
+                            console.error('Error sending MBTI video:', error);
+                            document.getElementById('statusValue').textContent = '連線錯誤';
+                        } finally {
+                            // 清除倒數計時並重新啟用按鈕
+                            clearInterval(countdownInterval);
+                            btn.disabled = false;
+                        }
+
+                        // Continue loop if still active
+                        if (mbtiLoopActive) {
+                            captureAndAnalyzeMBTI();
+                        }
+                    };
+
+                    // Record for 6 seconds
+                    mediaRecorder.start();
+                    setTimeout(() => {
+                        if (mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, 6000);
+
+                } catch (e) {
+                    console.error('MediaRecorder error:', e);
+                    mbtiLoopActive = false;
+                    identifyBtn.classList.remove('recording');
+                    identifyBtn.innerHTML = '辨識';
+                    identifyBtn.disabled = false;
+                }
+            }
+
+            function updateMBTIDashboard(data) {
+                const statusEl = document.getElementById('statusValue');
+                statusEl.textContent = '分析完成';
+                statusEl.style.color = '#28a745';
+
+                // 根據提供的 JSON 結構解析資料
+                const result = (data.results && data.results.length > 0) ? data.results[0] : 
+                               ((data.data && data.data.results && data.data.results.length > 0) ? data.data.results[0] : 
+                                (data.data ? data.data : null));
+
+                const emotionEl = document.getElementById('emotionValue');
+                if (result && result.mbti_type) {
+                    const confidence = result.confidence ? result.confidence : '??';
+                    const mbtiName = result.mbti_name ? result.mbti_name : '';
+                    
+                    // 美化排版：使用標籤化設計，確保不折行
+                    emotionEl.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap; flex-wrap: nowrap; padding: 5px 0;">
+                            <span style="background: linear-gradient(135deg, #ff6b5b 0%, #ee5253 100%); color: white; padding: 4px 12px; border-radius: 6px; font-size: 20px; font-weight: 800; box-shadow: 0 4px 10px rgba(255, 107, 91, 0.3); letter-spacing: 1px;">${result.mbti_type}</span>
+                            <span style="color: #fff; font-size: 18px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${mbtiName}</span>
+                            <span style="background: rgba(255,255,255,0.1); color: #17a2b8; padding: 2px 8px; border-radius: 20px; font-size: 12px; border: 1px solid rgba(23, 162, 184, 0.3); font-weight: bold;">${confidence}% 信心度</span>
+                        </div>
+                    `;
+                } else {
+                    emotionEl.textContent = '未知';
+                }
+
+                const demographicsEl = document.getElementById('demographicsValue');
+                if (result) {
+                    let html = '';
+                    
+                    // 基本資訊
+                    html += `<div style="margin-bottom: 8px;">`;
+                    if (result.gender) html += `<strong>性別:</strong> ${result.gender} | `;
+                    if (result.age_range) html += `<strong>年齡:</strong> ${result.age_range} | `;
+                    if (result.identity) html += `<strong>身份:</strong> ${result.identity}`;
+                    html += `</div>`;
+
+                    // 行為特徵標籤
+                    if (result.behavioral_traits && result.behavioral_traits.length > 0) {
+                        const traits = Array.isArray(result.behavioral_traits) 
+                            ? result.behavioral_traits.join('、') 
+                            : result.behavioral_traits;
+                        html += `<div style="margin-bottom: 8px; color: #ffc107;"><strong>核心特質:</strong> ${traits}</div>`;
+                    }
+
+                    // 詳細分析
+                    if (result.analysis) {
+                        html += `<div style="font-size: 13px; line-height: 1.6; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; margin-bottom: 8px;">`;
+                        const dims = [
+                            { key: 'introversion_extroversion', label: '能量來源' },
+                            { key: 'sensing_intuition', label: '資訊獲取' },
+                            { key: 'thinking_feeling', label: '決策方式' },
+                            { key: 'judging_perceiving', label: '生活態度' }
+                        ];
+                        
+                        dims.forEach(dim => {
+                            if (result.analysis[dim.key]) {
+                                const d = result.analysis[dim.key];
+                                html += `<div style="margin-bottom: 4px;"><strong>${dim.label} (${d.type}):</strong> ${d.description}</div>`;
+                            }
+                        });
+                        html += `</div>`;
+                    }
+
+                    // 建議
+                    if (result.recommendations) {
+                        html += `<div style="font-size: 13px; line-height: 1.6; border-top: 1px dashed rgba(255,255,255,0.2); pt: 8px; margin-top: 8px;">`;
+                        html += `<strong style="color: #17a2b8;">💡 互動建議:</strong><br>${result.recommendations}`;
+                        html += `</div>`;
+                    }
+
+                    demographicsEl.innerHTML = html || '-';
+                } else {
+                    demographicsEl.textContent = '-';
+                }
+
+                // MBTI 模式下隱藏建議欄位，由行為特徵承接主要資訊
+                const featuresEl = document.getElementById('featuresValue');
+                featuresEl.textContent = '-';
+            }
+
+            async function captureAndAnalyze() {
+                if (!video.srcObject) return;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(async function(blob) {
+                    if (!blob) return;
+
+                    const formData = new FormData();
+                    formData.append('file', blob, 'capture.jpg');
+
+                    try {
+                        const token = localStorage.getItem('access_token');
+                        if (!token) {
+                            console.error('No access token found');
+                            // Optionally redirect to login or show error
+                            return;
+                        }
+
+                        const response = await fetch('/api/emotions/analyze-image-emotion', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log('Emotion Analysis Result:', data);
+                            updateDashboard(data);
+                        } else {
+                            console.error('Analysis failed:', response.status);
+                            // Don't update UI to failure on every frame to avoid flickering, 
+                            // but maybe log it.
+                        }
+                    } catch (error) {
+                        console.error('Error sending frame:', error);
+                    }
+                }, 'image/jpeg', 0.8); // 0.8 quality
+            }
+
+            function updateDashboard(data) {
+                // Update Status
+                const statusEl = document.getElementById('statusValue');
+                if (data.face_count > 0) {
+                    statusEl.textContent = `偵測到 ${data.face_count} 人`;
+                    statusEl.style.color = '#28a745'; // Green
+                } else {
+                    statusEl.textContent = '未偵測到人臉';
+                    statusEl.style.color = '#ffc107'; // Yellow
+                }
+                
+                // Update Emotion
+                const emotionEl = document.getElementById('emotionValue');
+                if (data.dominant_emotion) {
+                    const confidence = Math.round(data.dominant_emotion_confidence);
+                    // Translate emotion to Chinese if possible, or keep English
+                    const emotionMap = {
+                        'HAPPY': '開心',
+                        'SAD': '悲傷',
+                        'ANGRY': '生氣',
+                        'CONFUSED': '困惑',
+                        'DISGUSTED': '厭惡',
+                        'SURPRISED': '驚訝',
+                        'CALM': '平靜',
+                        'NEUTRAL': '中性',
+                        'FEAR': '恐懼'
+                    };
+                    const emotionText = emotionMap[data.dominant_emotion] || data.dominant_emotion;
+                    emotionEl.textContent = `${emotionText} (${confidence}%)`;
+                } else {
+                    emotionEl.textContent = '-';
+                }
+
+                // Update Visitor (Optional: if we had recognition)
+                // For now, we can just show a timestamp or something to indicate liveness
+                // const visitorEl = document.getElementById('visitorValue');
+                // visitorEl.textContent = new Date().toLocaleTimeString();
+
+                // Update Demographics & Features
+                const demographicsEl = document.getElementById('demographicsValue');
+                const featuresEl = document.getElementById('featuresValue');
+
+                if (data.face_details && data.face_details.length > 0) {
+                    const face = data.face_details[0];
+                    
+                    // Age & Gender
+                    const ageLow = face.age_range ? face.age_range.Low : '?';
+                    const ageHigh = face.age_range ? face.age_range.High : '?';
+                    const gender = face.gender && face.gender.Value === 'Male' ? '男' : (face.gender && face.gender.Value === 'Female' ? '女' : '未知');
+                    demographicsEl.textContent = `${ageLow}-${ageHigh}歲 / ${gender}`;
+
+                    // Features
+                    const features = [];
+                    if (face.eyeglasses && face.eyeglasses.Value) features.push('眼鏡');
+                    if (face.sunglasses && face.sunglasses.Value) features.push('墨鏡');
+                    if (face.beard && face.beard.Value) features.push('鬍鬚');
+                    if (face.mustache && face.mustache.Value) features.push('八字鬍');
+                    
+                    featuresEl.textContent = features.length > 0 ? features.join(', ') : '無明顯特徵';
+                } else {
+                    demographicsEl.textContent = '-';
+                    featuresEl.textContent = '-';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

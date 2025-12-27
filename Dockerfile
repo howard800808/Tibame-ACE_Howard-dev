@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # system deps required for some packages (adjust as needed)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential gcc libpq-dev \
+    && apt-get install -y --no-install-recommends build-essential gcc libpq-dev libgl1 libglib2.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

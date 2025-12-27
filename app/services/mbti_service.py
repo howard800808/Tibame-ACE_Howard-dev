@@ -2,7 +2,8 @@ import os
 import base64
 import json
 from typing import Dict, List
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from app.core.config import settings
 
 # MBTI 類型的中文描述
@@ -33,10 +34,10 @@ class MBTIService:
         """初始化 Google Gemini 客戶端"""
         if not settings.GEMINI_API_KEY:
             print("【警告】GEMINI_API_KEY 未設置，MBTI 分析功能將無法使用")
-            self.model = None
+            self.client = None
         else:
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
+            self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            self.model_name = settings.GEMINI_MODEL
     
     def extract_people_from_frames(self, video_path: str, num_frames: int = 5) -> List[Dict]:
         """
@@ -103,7 +104,7 @@ class MBTIService:
         Returns:
             包含多人 MBTI 預測結果和分析的字典
         """
-        if not self.model:
+        if not self.client:
             raise ValueError("GEMINI_API_KEY 未設置，無法進行分析")
 
         try:
@@ -177,18 +178,20 @@ class MBTIService:
             
             # 添加所有影像幀
             for frame_data in frames_data:
-                content.append({
-                    "mime_type": "image/jpeg",
-                    "data": frame_data['base64_data'],
-                })
+                image_bytes = base64.b64decode(frame_data['base64_data'])
+                content.append(types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type="image/jpeg"
+                ))
             
             # 調用 Gemini API
-            response = self.model.generate_content(
-                content,
-                generation_config={
-                    "temperature": 0.7,
-                    "max_output_tokens": 4000,
-                }
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=content,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=4000,
+                )
             )
             
             # 解析回應

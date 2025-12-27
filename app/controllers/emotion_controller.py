@@ -37,6 +37,7 @@ class EmotionController:
         """
         # 使用 AWS Rekognition 分析影像
         analysis_result = emotion_service.analyze_emotion_from_image(image_data)
+        print(f"AWS Analysis Result: {json.dumps(analysis_result, indent=2, ensure_ascii=False)}")
         
         # 檢查分析是否失敗
         if "error" in analysis_result:

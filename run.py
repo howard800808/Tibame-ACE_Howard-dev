@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Request
+﻿from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
+<<<<<<< HEAD
 from app.routes import auth_router, user_router, system_router, emotion_router, video_router, mbti_router, adk_router, task_router
 from app.routes.linebot_routes import router as linebot_router, webhook_unified
 from app.routes.emotional_task_routes import router as emotional_task_router
@@ -14,6 +15,10 @@ from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view
 from app.views.linebot_view import linebot_view
 from app.views.emotional_task_view import emotional_task_view
+=======
+from app.routes import init_routes
+from app.controllers.system_controller import system_controller
+>>>>>>> 5e70ceda47dabf1367e6c9dbbd1b06d08dd9f722
 from app.services.linebot_service import linebot_service
 
 # Models: ensure table definitions are loaded before Base.metadata.create_all
@@ -61,6 +66,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # 註冊路由 (Routes -> Controllers -> Services -> Models)
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
@@ -143,6 +149,10 @@ async def linebot_department_tasks(request: Request, department_code: str):
     """部門任務管理頁面"""
     return await linebot_view.department_tasks(request, department_code)
 
+=======
+# 註冊所有路由 (API + Pages)
+init_routes(app)
+>>>>>>> 5e70ceda47dabf1367e6c9dbbd1b06d08dd9f722
 
 # 全域 404 錯誤處理器
 @app.exception_handler(StarletteHTTPException)

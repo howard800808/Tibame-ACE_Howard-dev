@@ -71,6 +71,10 @@ class VideoController:
                 tmp_file.write(video_data)
                 tmp_path = tmp_file.name
             
+            # Capture IDs to avoid accessing SQLAlchemy objects in thread
+            user_id = current_user.id
+            analysis_id = db_video.id
+
             # 在背景執行緒中進行分析（為線程創建新的 Session）
             def analyze_in_thread():
                 # 為線程創建新的 Session
@@ -78,8 +82,8 @@ class VideoController:
                 try:
                     video_service.analyze_video_async(
                         tmp_path, 
-                        db_video.id, 
-                        current_user.id, 
+                        analysis_id, 
+                        user_id, 
                         thread_db
                     )
                 except Exception as e:
@@ -88,7 +92,7 @@ class VideoController:
                     # 更新數據庫記錄為失敗狀態
                     try:
                         video_record = thread_db.query(VideoAnalysis).filter(
-                            VideoAnalysis.id == db_video.id
+                            VideoAnalysis.id == analysis_id
                         ).first()
                         if video_record:
                             video_record.status = "failed"
