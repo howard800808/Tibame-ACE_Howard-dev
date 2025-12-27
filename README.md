@@ -154,6 +154,7 @@ API 文檔: http://localhost:8000/docs
 - 使用 **AWS Rekognition** 偵測影片中人物的情緒變化。
 - 支援 7 種基本情緒偵測 (Happy, Sad, Angry, Confused, Disgusted, Surprised, Calm)。
 - 分析結果包含信心指數 (Confidence Score)。
+- **詳細操作與測試說明請參考**: [AWS Emotion Analysis Docs](scripts/aws_emotion/README.md)
 
 ### 2. 語音轉文字與說話者識別 (Speech-to-Text & Diarization)
 - 使用 **Azure Cognitive Services (Speech SDK)** 進行語音轉文字。
@@ -185,59 +186,96 @@ API 文檔: http://localhost:8000/docs
 www/
 ├── app/
 │   ├── controllers/      # 🎮 業務邏輯層
+│   │   ├── adk_controller.py
 │   │   ├── auth_controller.py
-│   │   ├── user_controller.py
+│   │   ├── emotion_controller.py
+│   │   ├── linebot_controller.py
+│   │   ├── mbti_controller.py
 │   │   ├── system_controller.py
-│   │   ├── linebot_controller.py  # (LINE Bot Webhook 處理)
-│   │   └── task_controller.py     # (任務管理邏輯)
+│   │   ├── task_controller.py
+│   │   ├── user_controller.py
+│   │   └── video_controller.py
 │   │
 │   ├── models/          # 🗄️ ORM 模型層
-│   │   ├── user.py      # (含 role 欄位: admin/manager/user)
-│   │   ├── task.py      # (任務資料模型)
-│   │   └── department.py # (部門設定模型)
+│   │   ├── department.py
+│   │   ├── emotion.py
+│   │   ├── task.py
+│   │   ├── user.py
+│   │   └── video.py
 │   │
 │   ├── schemas/         # 📋 API 資料驗證
+│   │   ├── adk_schema.py
 │   │   ├── auth_schema.py
-│   │   ├── user_schema.py
+│   │   ├── emotion_schema.py
+│   │   ├── linebot_schema.py
 │   │   ├── task_schema.py
-│   │   └── linebot_schema.py
+│   │   ├── user_schema.py
+│   │   └── video_schema.py
 │   │
 │   ├── views/           # 👁️ 頁面渲染層
 │   │   ├── auth_view.py
 │   │   ├── dashboard_view.py
+│   │   ├── linebot_view.py
+│   │   ├── mbti_view.py
+│   │   ├── task_view.py
 │   │   └── user_view.py
 │   │
 │   ├── routes/          # 🛣️ API 路由層
+│   │   ├── adk_routes.py
 │   │   ├── auth_routes.py
-│   │   ├── user_routes.py
+│   │   ├── emotion_routes.py
+│   │   ├── linebot_routes.py
+│   │   ├── mbti_routes.py
 │   │   ├── system_routes.py
-│   │   ├── linebot_routes.py      # (LINE Bot 相關路由)
-│   │   └── task_routes.py         # (任務相關路由)
+│   │   ├── task_routes.py
+│   │   ├── user_routes.py
+│   │   └── video_routes.py
 │   │
 │   ├── services/        # ⚙️ 資料存取層
-│   │   ├── user_service.py
+│   │   ├── adk_service.py
+│   │   ├── azure_transcription_service.py
+│   │   ├── emotion_service.py
+│   │   ├── hotel_task_scenarios.py
+│   │   ├── linebot_service.py
+│   │   ├── mbti_service.py
 │   │   ├── task_service.py
-│   │   └── linebot_service.py     # (LINE Bot 業務邏輯 SDK v3)
+│   │   ├── user_service.py
+│   │   └── video_service.py
 │   │
 │   └── core/            # 🔧 核心配置
 │       ├── config.py
-│       ├── security.py
 │       ├── database.py
-│       └── dependencies.py
+│       ├── dependencies.py
+│       ├── security.py
+│       └── templates.py
 │
-├── templates/           # 🎨 HTML 模板
-│   ├── login.html
-│   ├── dashboard.html
-│   └── users.html
+├── db_init/             # 🗄️ 資料庫初始化腳本
+│   └── ace20251219.sql
 │
-├── static/              # 📁 靜態資源
+├── scripts/             # 🛠️ 實用腳本
+│   ├── azure_lang/      # Azure 語言服務測試
+│   ├── linebot/         # LINE Bot 維護腳本
+│   └── mbti/            # MBTI 分析測試
+│
+├── static/              # 🎨 靜態資源 (CSS/JS)
+│   ├── script.js
 │   └── style.css
 │
-├── run.py               # 🚀 程式入口
-├── requirements.txt     # 📦 依賴套件
-├── README.md            # 📖 專案說明文檔
-├── .env                 # 🔐 環境變數
-└── Dockerfile          # 🐳 Docker 配置
+├── templates/           # 📄 HTML 模板
+│   ├── dashboard.html
+│   ├── linebot_dashboard.html
+│   ├── login.html
+│   ├── mbti.html
+│   ├── sidebar.html
+│   ├── tasks.html
+│   ├── top.html
+│   ├── users.html
+│   └── video_analysis.html
+│
+├── .env                 # 🔒 環境變數
+├── .env.example         # 📝 環境變數範例
+├── requirements.txt     # 📦 專案依賴
+└── run.py               # 🚀 啟動入口
 ```
 
 ---
@@ -450,6 +488,16 @@ git push origin feature/product-management
 | GET | `/api/health` | 健康檢查 | ❌ |
 | GET | `/api/error/404` | 404 錯誤頁面 | ❌ |
 | GET | `/api/error/500` | 500 錯誤頁面 | ❌ |
+
+### AI 分析 API
+
+| 方法 | 端點 | 說明 | 認證 |
+|------|------|------|------|
+| POST | `/api/videos/analyze-video-emotion` | 影片情緒分析 (上傳) | ✅ |
+| GET | `/api/videos/video-results/{id}` | 取得影片分析結果 | ✅ |
+| POST | `/api/emotions/analyze-image-emotion` | 影像情緒分析 (上傳) | ✅ |
+| GET | `/api/emotions/image-results/{id}` | 取得影像分析結果 | ✅ |
+| POST | `/api/mbti/analyze-personality` | MBTI 人格分析 | ✅ |
 
 ### 頁面路由
 

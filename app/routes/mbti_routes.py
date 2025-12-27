@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, status, HTTPException
 from fastapi.responses import JSONResponse
 from app.controllers.mbti_controller import mbti_controller
 
-router = APIRouter(prefix="/mbti", tags=["MBTI分析"])
+router = APIRouter(prefix="/mbti", tags=["MBTI人格分析"])
 
 
 @router.post("/test-upload", status_code=status.HTTP_200_OK)
@@ -47,7 +47,7 @@ async def test_upload(file: UploadFile = File(...)):
         )
 
 
-@router.post("/analyze", status_code=status.HTTP_200_OK)
+@router.post("/analyze-personality", status_code=status.HTTP_200_OK)
 async def analyze_video_mbti(file: UploadFile = File(...)):
     """
     上傳影片並分析人物行為特徵，預測 MBTI 類型

@@ -17,10 +17,10 @@ from app.schemas.video_schema import (
 )
 from app.models.user import User
 
-router = APIRouter(prefix="/videos", tags=["影片分析"])
+router = APIRouter(prefix="/videos", tags=["影片情緒分析"])
 
 
-@router.post("/analyze", response_model=VideoUploadResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post("/analyze-video-emotion", response_model=VideoUploadResponse, status_code=status.HTTP_202_ACCEPTED)
 async def analyze_video(
     file: UploadFile = File(..., description="影片檔案 (MP4, WMV, AVI 等)"),
     current_user: User = Depends(get_current_active_user),
@@ -85,7 +85,7 @@ async def analyze_video(
     )
 
 
-@router.get("/analyze/{analysis_id}", response_model=VideoAnalysisDetailResponse)
+@router.get("/video-results/{analysis_id}", response_model=VideoAnalysisDetailResponse)
 async def get_video_analysis(
     analysis_id: int,
     current_user: User = Depends(get_current_active_user),
@@ -105,7 +105,7 @@ async def get_video_analysis(
     return video_controller.get_analysis_detail(analysis_id, current_user, db)
 
 
-@router.get("/analyze/{analysis_id}/progress", response_model=VideoAnalysisProgressResponse)
+@router.get("/video-results/{analysis_id}/progress", response_model=VideoAnalysisProgressResponse)
 async def get_video_analysis_progress(
     analysis_id: int,
     current_user: User = Depends(get_current_active_user),
@@ -146,7 +146,7 @@ async def get_video_analysis_history(
     return video_controller.get_user_analyses(current_user, db, skip, limit)
 
 
-@router.delete("/analyze/{analysis_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/video-results/{analysis_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_video_analysis(
     analysis_id: int,
     current_user: User = Depends(get_current_active_user),

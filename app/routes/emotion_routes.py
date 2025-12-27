@@ -16,10 +16,10 @@ from app.schemas.emotion_schema import (
 )
 from app.models.user import User
 
-router = APIRouter(prefix="/emotions", tags=["情緒辨識"])
+router = APIRouter(prefix="/emotions", tags=["影像情緒分析"])
 
 
-@router.post("/analyze", response_model=EmotionDetailResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/analyze-image-emotion", response_model=EmotionDetailResponse, status_code=status.HTTP_201_CREATED)
 async def analyze_emotion(
     file: UploadFile = File(..., description="要分析的影像檔案 (JPEG, PNG, etc.)"),
     current_user: User = Depends(get_current_active_user),
@@ -67,7 +67,7 @@ async def analyze_emotion(
     return result
 
 
-@router.get("/analyze/{analysis_id}", response_model=EmotionDetailResponse)
+@router.get("/image-results/{analysis_id}", response_model=EmotionDetailResponse)
 async def get_emotion_analysis(
     analysis_id: int,
     current_user: User = Depends(get_current_active_user),
@@ -125,7 +125,7 @@ async def get_emotion_statistics(
     return emotion_controller.get_emotion_statistics(current_user, db)
 
 
-@router.delete("/analyze/{analysis_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/image-results/{analysis_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_emotion_analysis(
     analysis_id: int,
     current_user: User = Depends(get_current_active_user),
