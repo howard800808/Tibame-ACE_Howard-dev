@@ -443,39 +443,85 @@ class LineBotService:
 
     # ---------------------- 任務處理 ----------------------
     def get_tasks_for_department(self, dept_code: str) -> List[dict]:
-        # 從 MySQL 取得部門任務並轉換為 Flex Message
+        """從資料庫取得部門任務，若一般任務為空則回退使用感動任務"""
         from app.core.database import SessionLocal
         from app.models.task import Task
+        from app.models.emotional_task import EmotionalTask
+        from app.models.department import Department
+
+        def map_status(raw: Optional[str]) -> str:
+            val = (raw or '').lower()
+            if val in ['progress', 'in_progress', 'assigned']:
+                return 'PROGRESS'
+            if val in ['done', 'completed']:
+                return 'DONE'
+            return 'PENDING'
+
+        def map_priority(code: Optional[str]) -> str:
+            if not code:
+                return 'F'
+            val = str(code).upper()
+            return val[0] if val[0] in ['P', 'E', 'F'] else 'F'
+
+        def format_time_range(start_time, end_time) -> str:
+            start_text = start_time.strftime('%H:%M') if start_time else ''
+            end_text = end_time.strftime('%H:%M') if end_time else ''
+            if start_text and end_text:
+                return f'{start_text}~{end_text}'
+            return start_text or end_text or '-'
 
         db = SessionLocal()
         try:
+            dept_display = dept_code
+            dept_info = db.query(Department).filter(Department.code == dept_code).first()
+            if dept_info:
+                dept_display = f"{dept_info.code} {dept_info.name_zh}"
+
             tasks = db.query(Task).filter(Task.department == dept_code).order_by(Task.id.desc()).all()
-            
-            flex_messages = []
+            flex_messages: List[dict] = []
+
             for task in tasks:
                 title = task.title if task.title else f'任務 #{task.task_uid}'
-                
-                s_raw = task.status.lower() if task.status else 'pending'
-                s_mapped = 'PENDING'
-                if s_raw in ['progress', 'in_progress']:
-                    s_mapped = 'PROGRESS'
-                elif s_raw in ['done', 'completed']:
-                    s_mapped = 'DONE'
-
-                flex_msg = create_hotel_task_card(
-                    dept=f'{task.department}',
-                    priority=task.priority,
+                flex_messages.append(create_hotel_task_card(
+                    dept=dept_display,
+                    priority=map_priority(task.priority),
                     room=task.location,
                     guest='Guest',
                     title=title,
                     content=task.description,
                     time=task.due_at.strftime('%H:%M') if task.due_at else '-',
                     remark='',
-                    status=s_mapped,
+                    status=map_status(task.status),
                     task_id=task.task_uid
-                )
-                flex_messages.append(flex_msg)
-            
+                ))
+
+            if flex_messages:
+                return flex_messages
+
+            # 回退到感動派工任務
+            emo_tasks = (
+                db.query(EmotionalTask)
+                .filter(EmotionalTask.dept_code == dept_code)
+                .filter(EmotionalTask.status.in_(['pending', 'assigned', 'in_progress']))
+                .order_by(EmotionalTask.task_date.desc(), EmotionalTask.time_start.asc())
+                .limit(20)
+                .all()
+            )
+
+            for emo in emo_tasks:
+                flex_messages.append(create_hotel_task_card(
+                    dept=dept_display,
+                    priority=map_priority(emo.sequence_stage),
+                    room=emo.location_code or 'N/A',
+                    guest=emo.project_code or 'Guest',
+                    title=emo.task_title or f'任務 {emo.task_id}',
+                    content=emo.action_item or '',
+                    time=format_time_range(emo.time_start, emo.time_end),
+                    remark=emo.note or '',
+                    status=map_status(emo.status),
+                    task_id=emo.task_id
+                ))
+
             return flex_messages
         except Exception as e:
             print(f'[ERROR] 取得部門 {dept_code} 任務失敗: {e}')
@@ -699,9 +745,11 @@ class LineBotService:
         finally:
             db.close()
 
-    async def update_task_status(self, task_id: str, status: TaskStatus, notes: Optional[str] = None) -> Optional[Task]:
+    async def update_task_status(self, task_id: str, status: TaskStatus, notes: Optional[str] = None):
+        """更新任務狀態，若一般任務不存在則嘗試更新感動任務"""
         from app.core.database import SessionLocal
         from app.models.task import Task
+        from app.models.emotional_task import EmotionalTask
         
         db = SessionLocal()
         try:
@@ -715,7 +763,17 @@ class LineBotService:
                     task.completed_at = datetime.utcnow()
                 db.commit()
                 db.refresh(task)
-                return task
+                return (task, 'task')
+
+            emo = db.query(EmotionalTask).filter(EmotionalTask.task_id == task_id).first()
+            if emo:
+                emo.status = status.value if hasattr(status, 'value') else str(status)
+                if status == TaskStatus.COMPLETED:
+                    emo.completed_at = datetime.utcnow()
+                db.commit()
+                db.refresh(emo)
+                return (emo, 'emotional')
+
             return None
         except Exception as e:
             print(f'[Error] MySQL 更新失敗: {e}')

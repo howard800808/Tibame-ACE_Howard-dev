@@ -155,6 +155,10 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth(); // 驗證登入
             loadTasks();
+            // 自動刷新，確保與 LINE 操作同步（每 15 秒）
+            setInterval(() => {
+                loadTasks();
+            }, 15000);
         });
 
         async function loadTasks() {
@@ -247,7 +251,8 @@
                     : '-';
 
                 // 完成時間僅顯示 LineBot 回傳的完成時間 (completed_at)
-                const completedAt = task.completed_at
+                // 僅在已完成狀態顯示完成時間，避免誤顯示更新時間或其他欄位
+                const completedAt = (task.status === 'completed' && task.completed_at)
                     ? new Date(task.completed_at).toLocaleString()
                     : '-';
 

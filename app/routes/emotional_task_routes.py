@@ -28,7 +28,9 @@ def _parse_time(value: str):
 
 
 def _seed_emotional_tasks(db: Session):
-    """從 json 檔案匯入感動任務（有則更新，無則新增）"""
+    """從 json 檔案匯入感動任務（有則更新，無則新增）
+    注意：不覆蓋既有記錄的 status，避免把執行中/已完成重置為 pending。
+    """
     base_date = date.today()
 
     for file_path in DATA_FILES:
@@ -49,10 +51,13 @@ def _seed_emotional_tasks(db: Session):
                 continue
 
             record = db.query(EmotionalTask).filter_by(task_id=task_id).first()
+            is_new = False
             if not record:
                 record = EmotionalTask(task_id=task_id)
                 db.add(record)
+                is_new = True
 
+            # 更新基本欄位（狀態除了新建外不覆蓋）
             record.project_code = project_code
             record.dept_code = item.get("dept_code")
             record.dept_name = item.get("dept_name")
@@ -64,7 +69,8 @@ def _seed_emotional_tasks(db: Session):
             record.task_title = item.get("title")
             record.action_item = item.get("action_item")
             record.note = item.get("note")
-            record.status = item.get("status", "pending")
+            if is_new:
+                record.status = item.get("status", "pending")
 
     try:
         db.commit()
@@ -84,7 +90,8 @@ def get_all_emotional_tasks(
     current_user: dict = Depends(get_current_user)
 ):
     """取得所有感動派工任務"""
-    _seed_emotional_tasks(db)
+    # 僅在應用啟動時匯入，不在每次 GET 時重新匯入以免覆蓋 status 狀態
+    # _seed_emotional_tasks(db)
 
     tasks = (
         db.query(EmotionalTask)
@@ -99,7 +106,8 @@ def get_emergency_emotional_tasks(
     current_user: dict = Depends(get_current_user)
 ):
     """取得所有緊急感動派工任務"""
-    _seed_emotional_tasks(db)
+    # 僅在應用啟動時匯入，不在每次 GET 時重新匯入以免覆蓋 status 狀態
+    # _seed_emotional_tasks(db)
 
     tasks = (
         db.query(EmotionalTask)

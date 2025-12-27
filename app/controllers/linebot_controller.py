@@ -231,7 +231,6 @@ class LineBotController:
                     new_status = status_map.get(op)
                     
                     if new_status:
-                        # 更新任務狀態
                         updated = await linebot_service.update_task_status(
                             task_id, 
                             new_status, 
@@ -239,36 +238,99 @@ class LineBotController:
                         )
                         
                         print("[任務狀態更新]", {"task_id": task_id, "status": new_status.value, "ok": bool(updated)})
-                        
-                        # 產生更新後的 Flex Message 任務卡
+
                         if updated and reply_token:
-                            # [修正] 如果是完成任務 (complete)，需要同時發送「更新後的任務卡」與「回報流程第一步」
+                            updated_obj, src = updated
+
+                            def build_emotional_card(obj):
+                                # 以感動任務資料組成 Flex 卡
+                                dept_label = f"{department_code}"
+                                try:
+                                    from app.core.database import SessionLocal
+                                    from app.models.department import Department
+                                    db = SessionLocal()
+                                    dept = db.query(Department).filter(Department.code == department_code).first()
+                                    if dept:
+                                        dept_label = f"{dept.code} {dept.name_zh}"
+                                except Exception:
+                                    pass
+                                finally:
+                                    try:
+                                        db.close()
+                                    except Exception:
+                                        pass
+
+                                from app.services.linebot_service import create_hotel_task_card
+                                def map_priority(code: str) -> str:
+                                    if not code:
+                                        return 'F'
+                                    val = str(code).upper()
+                                    return val[0] if val[0] in ['P','E','F'] else 'F'
+
+                                def map_status(val: str) -> str:
+                                    v = (val or '').lower()
+                                    if v in ['in_progress', 'progress', 'assigned']:
+                                        return 'PROGRESS'
+                                    if v in ['done', 'completed']:
+                                        return 'DONE'
+                                    return 'PENDING'
+
+                                def fmt_time_range(start_time, end_time) -> str:
+                                    s = start_time.strftime('%H:%M') if start_time else ''
+                                    e = end_time.strftime('%H:%M') if end_time else ''
+                                    if s and e:
+                                        return f"{s}~{e}"
+                                    return s or e or '-'
+
+                                return create_hotel_task_card(
+                                    dept=dept_label,
+                                    priority=map_priority(getattr(obj, 'sequence_stage', None)),
+                                    room=getattr(obj, 'location_code', None) or 'N/A',
+                                    guest=getattr(obj, 'project_code', None) or 'Guest',
+                                    title=getattr(obj, 'task_title', None) or f"任務 {getattr(obj, 'task_id', '')}",
+                                    content=getattr(obj, 'action_item', None) or '',
+                                    time=fmt_time_range(getattr(obj, 'time_start', None), getattr(obj, 'time_end', None)),
+                                    remark=getattr(obj, 'note', None) or '',
+                                    status=map_status(getattr(obj, 'status', None)),
+                                    task_id=getattr(obj, 'task_id', None)
+                                )
+
+                            # 產生更新後的 Flex Message 任務卡
                             if op == 'complete':
-                                # 1. 更新後的任務卡
-                                task_flex_dict = linebot_service.create_task_flex_card(updated)
+                                if src == 'task':
+                                    task_flex_dict = linebot_service.create_task_flex_card(updated_obj)
+                                else:
+                                    task_flex_dict = build_emotional_card(updated_obj)
+
                                 task_container = FlexContainer.from_dict(task_flex_dict)
-                                messages = [FlexMessage(alt_text=f"任務: {updated.title}", contents=task_container)]
+                                messages = [FlexMessage(alt_text=f"任務: {getattr(updated_obj, 'title', getattr(updated_obj, 'task_title', ''))}", contents=task_container)]
                                 
-                                # 2. 回報流程第一步
                                 print(f"[Postback] 觸發回報流程，任務ID: {task_id}")
                                 report_bubble_dict = create_report_flow_card(
                                     step=1, 
                                     dept=f"{department_code} 測試", 
-                                    room=updated.location or "Room N/A", 
+                                    room=getattr(updated_obj, 'location', None) or getattr(updated_obj, 'location_code', None) or "Room N/A", 
                                     task_id=task_id
                                 )
                                 report_container = FlexContainer.from_dict(report_bubble_dict)
                                 messages.append(FlexMessage(alt_text="任務回報 (1/5)", contents=report_container))
                                 
-                                # 一次發送多則訊息
                                 await linebot_service.reply_messages(department_code, reply_token, messages)
                             else:
-                                # 其他操作 (如 accept)，只發送更新後的任務卡
-                                await linebot_service.send_task_flex_reply(
-                                    department_code,
-                                    reply_token,
-                                    updated
-                                )
+                                if src == 'task':
+                                    await linebot_service.send_task_flex_reply(
+                                        department_code,
+                                        reply_token,
+                                        updated_obj
+                                    )
+                                else:
+                                    emo_card = build_emotional_card(updated_obj)
+                                    container = FlexContainer.from_dict(emo_card)
+                                    await linebot_service.reply_messages(
+                                        department_code,
+                                        reply_token,
+                                        [FlexMessage(alt_text=f"任務: {getattr(updated_obj, 'task_title', '')}", contents=container)]
+                                    )
                             return
                     else:
                         print(f"[任務狀態更新] 未知操作: {op}")
