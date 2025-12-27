@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, LargeBinary
+from sqlalchemy import Column, Integer, String, Float, DateTime, LargeBinary, Text
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -17,14 +17,14 @@ class EmotionAnalysis(Base):
     dominant_emotion_confidence = Column(Float, nullable=False, comment="主要情緒信心度 (0-100)")
     
     # 詳細情緒分析 (JSON 儲存)
-    emotions_json = Column(String(1000), nullable=True, comment="所有情緒的信心度 (JSON格式)")
+    emotions_json = Column(Text, nullable=True, comment="所有情緒的信心度 (JSON格式)")
     
     # 人臉檢測資訊
     face_count = Column(Integer, default=0, comment="檢測到的臉部數量")
-    face_details_json = Column(String(2000), nullable=True, comment="臉部詳細資訊 (JSON)")
+    face_details_json = Column(Text, nullable=True, comment="臉部詳細資訊 (JSON)")
     
     # 其他分析結果
-    analysis_result_json = Column(String(2000), nullable=True, comment="AWS 完整分析結果 (JSON)")
+    analysis_result_json = Column(Text, nullable=True, comment="AWS 完整分析結果 (JSON)")
     
     # 狀態與時間
     status = Column(String(20), default="success", comment="分析狀態: success, processing, failed")
