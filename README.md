@@ -9,13 +9,14 @@
 1. [專案概述](#專案概述)
 2. [架構說明](#架構說明)  
 3. [LINE Bot 整合](#line-bot-整合)
-4. [專案結構](#專案結構)
-5. [快速開始](#快速開始)
-6. [開發指南](#開發指南)
-7. [API 端點](#api-端點)
-8. [環境配置](#環境配置)
-9. [技術棧](#技術棧)
-10. [常見問題](#常見問題)
+4. [影片與情緒分析模組](#影片與情緒分析模組)
+5. [專案結構](#專案結構)
+6. [快速開始](#快速開始)
+7. [開發指南](#開發指南)
+8. [API 端點](#api-端點)
+9. [環境配置](#環境配置)
+10. [技術棧](#技術棧)
+11. [常見問題](#常見問題)
 
 ---
 
@@ -36,6 +37,9 @@ ACE服務管理後台採用 **MVC (Model-View-Controller)** 架構,將資料驗�
 - ✅ **自動文檔**: Swagger UI + ReDoc
 - ✅ **模組化設計**: Schemas (資料驗證) + Views (頁面渲染)
 - ✅ **側邊選單**: 依據使用者權限動態顯示功能列表
+- ✅ **影片情緒分析**: 整合 AWS Rekognition 進行情緒偵測
+- ✅ **語音轉文字**: 整合 Azure Speech SDK 進行語音識別與說話者分離
+- ✅ **MBTI 分析**: 基於影片分析結果的人格特質評估
 
 ### 測試帳號
 
@@ -141,6 +145,39 @@ API 文檔: http://localhost:8000/docs
 | **Schemas** | `app/schemas/` | API 資料驗證 (Pydantic) | `user_schema.py` |
 | **Views** | `app/views/` | HTML 頁面渲染 (Jinja2) | `dashboard_view.py` |
 | **Templates** | `templates/` | HTML 模板 + JavaScript | `login.html`, `dashboard.html` |
+
+---
+
+## 影片與情緒分析模組
+
+本系統整合了 AWS 與 Azure 的 AI 服務，提供完整的影片分析功能：
+
+### 1. 情緒分析 (Emotion Analysis)
+- 使用 **AWS Rekognition** 偵測影片中人物的情緒變化。
+- 支援 7 種基本情緒偵測 (Happy, Sad, Angry, Confused, Disgusted, Surprised, Calm)。
+- 分析結果包含信心指數 (Confidence Score)。
+
+### 2. 語音轉文字與說話者識別 (Speech-to-Text & Diarization)
+- 使用 **Azure Cognitive Services (Speech SDK)** 進行語音轉文字。
+- 支援 **Speaker Diarization** (說話者識別)，可區分不同發言者。
+- 自動提取影片音軌 (使用 FFmpeg)。
+
+### 3. 處理流程架構
+
+```
+[Video Upload] -> [VideoController] -> [VideoService]
+                                            |
+                        +-------------------+-------------------+
+                        |                                       |
+                [EmotionService]                     [AzureTranscriptionService]
+                (AWS Rekognition)                    (Azure Speech SDK)
+                        |                                       |
+                 [Emotion Data]                       [Transcript + Speakers]
+                        |                                       |
+                        +-------------------+-------------------+
+                                            |
+                                     [Database]
+```
 
 ---
 
@@ -479,6 +516,16 @@ DATABASE_URL=sqlite:///./admin.db
 
 # CORS
 BACKEND_CORS_ORIGINS=["*"]  # 生產環境改為指定網域
+
+# Azure Speech-to-Text
+AZURE_SPEECH_API_KEY=your_key
+AZURE_SPEECH_ENDPOINT=your_endpoint
+AZURE_SPEECH_REGION=eastus
+
+# AWS Rekognition
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
+AWS_DEFAULT_REGION=us-east-1
 ```
 
 ### 安全注意事項
@@ -512,6 +559,13 @@ BACKEND_CORS_ORIGINS=["*"]  # 生產環境改為指定網域
 - **python-jose** 3.3+ - JWT Token
 - **bcrypt** 5.0+ - 密碼加密
 - **python-multipart** - 表單處理
+
+### AI 與多媒體處理
+
+- **AWS SDK (boto3)** - Rekognition 影像分析
+- **Azure Cognitive Services Speech** - 語音轉文字
+- **FFmpeg** - 音訊提取與處理
+- **OpenCV** - 影片幀處理
 
 ### 資料庫
 

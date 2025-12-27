@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI 影片分析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: #3d3d3d;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border: 3px solid #000000;
+        }
+        
+        .upload-section h2 {
+            color: #000000;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .upload-area {
+            border: 3px solid #000000;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+        
+        .upload-area:hover {
+            border-color: #000000;
+            background: #f5f5f5;
+        }
+        
+        .upload-area.dragging {
+            border-color: #000000;
+            background: #f0f0f0;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text strong {
+            color: #000000;
+        }
+        
+        .upload-hint {
+            color: #000000;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .file-info p {
+            color: #2e7d32;
+            margin: 5px 0;
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333333;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: none;
+            border: 3px solid #000000;
+        }
+        
+        .result-section.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #000000;
+        }
+        
+        .spinner {
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #000000;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .mbti-result {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .mbti-type {
+            font-size: 3em;
+            font-weight: bold;
+            color: #000000;
+            letter-spacing: 10px;
+            margin: 20px 0;
+        }
+        
+        .confidence {
+            font-size: 1.1em;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #505050;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0 20px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+            transition: width 0.5s ease;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .analysis-item {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #000000;
+        }
+        
+        .analysis-label {
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        .analysis-type {
+            display: inline-block;
+            background: #f5f5f5;
+            color: #000000;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .analysis-description {
+            color: #000000;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .analysis-score {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #505050;
+            color: #aaaaaa;
+            font-size: 0.9em;
+        }
+        
+        .traits {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #000000;
+        }
+        
+        .traits h3 {
+            color: #000000;
+            margin-bottom: 15px;
+        }
+        
+        .trait-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .trait-badge {
+            background: #ffffff;
+            color: #000000;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 2px solid #000000;
+        }
+        
+        .recommendations {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #000000;
+            margin-bottom: 20px;
+        }
+        
+        .recommendations h3 {
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        .recommendations p {
+            color: #000000;
+            line-height: 1.6;
+        }
+        
+        .emotion-section {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ff9800;
+            margin-bottom: 20px;
+        }
+        
+        .emotion-result {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .emotion-item {
+            background: #fff8f0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .emotion-label {
+            font-weight: 600;
+            color: #ff9800;
+            margin-bottom: 5px;
+        }
+        
+        .emotion-value {
+            font-size: 1.5em;
+            color: #000000;
+            font-weight: bold;
+        }
+        
+        .emotion-bar {
+            width: 100%;
+            height: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .emotion-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800 0%, #ffb74d 100%);
+            transition: width 0.5s ease;
+        }
+        
+        .error-message {
+            background: #4a2c2c;
+            color: #ff9999;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6666;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .reset-btn {
+            padding: 12px 30px;
+            background: #666666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .reset-btn:hover {
+            background: #777777;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .mbti-type {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 MBTI 影片分析工具</h1>
+            <p>上傳您的影片，我們將分析人物行為特徵並預測其 MBTI 類型</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 上傳區域 -->
+            <div class="upload-section">
+                <h2>上傳影片</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📹</div>
+                    <p class="upload-text">
+                        <strong>拖拽影片到這裡</strong><br>
+                        或點擊選擇檔案
+                    </p>
+                    <p class="upload-hint">支援 MP4、MOV、AVI、WebM 格式，最大 500MB</p>
+                </div>
+                <input type="file" id="fileInput" accept="video/*">
+                
+                <div class="file-info" id="fileInfo">
+                    <p><strong>已選擇檔案：</strong><span id="fileName"></span></p>
+                    <p><strong>檔案大小：</strong><span id="fileSize"></span></p>
+                </div>
+                
+                <button class="analyze-btn" id="analyzeBtn" disabled>
+                    開始分析 MBTI
+                </button>
+            </div>
+            
+            <!-- 結果區域 -->
+            <div class="result-section" id="resultSection">
+                <div class="loading" id="loadingSection" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>正在分析影片中的人物行為特徵...</p>
+                    <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
+                        此過程可能需要 1-2 分鐘，請耐心等待
+                    </p>
+                </div>
+                
+                <div id="resultsContent">
+                    <!-- MBTI 結果 -->
+                    <div class="mbti-result">
+                        <h2>預測結果</h2>
+                        <div class="mbti-type" id="mbtiType">----</div>
+                        <div class="confidence">
+                            信心度：<span id="confidenceValue">0</span>%
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 詳細分析 -->
+                    <div class="analysis-grid" id="analysisGrid"></div>
+                    
+                    <!-- 行為特徵 -->
+                    <div class="traits" id="traitsSection"></div>
+                    
+                    <!-- 建議 -->
+                    <div class="recommendations">
+                        <h3>🎯 個人發展建議</h3>
+                        <p id="recommendations"></p>
+                    </div>
+                    
+                    <!-- 表情情緒分析結果 -->
+                    <div class="emotion-section" id="emotionSection" style="display: none;">
+                        <h3 style="color: #000000; margin-bottom: 15px;">😊 表情情緒分析</h3>
+                        <div class="emotion-result" id="emotionResult"></div>
+                    </div>
+                    
+                    <!-- 錯誤訊息 -->
+                    <div class="error-message" id="errorMessage"></div>
+                    
+                    <!-- 診斷信息 -->
+                    <div id="diagnosticInfo" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; display: none;">
+                        <strong style="color: #666;">🔧 診斷信息</strong>
+                        <p id="diagnosticText" style="margin: 10px 0 0 0; color: #999;"></p>
+                    </div>
+                    
+                    <!-- 重置按鈕 -->
+                    <button class="reset-btn" onclick="resetAnalysis()">分析另一個影片</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultSection = document.getElementById('resultSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsContent = document.getElementById('resultsContent');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // 頁面加載時進行診斷
+        window.addEventListener('load', async () => {
+            console.log('【頁面已加載】開始診斷...');
+            
+            // 測試 API 連接
+            try {
+                const response = await fetch('/api/mbti/test-upload', {
+                    method: 'OPTIONS'
+                });
+                console.log('【API 連接檢查】成功，狀態碼:', response.status);
+            } catch (error) {
+                console.warn('【API 連接警告】', error.message);
+            }
+            
+            // 檢查文件輸入支持
+            console.log('【文件 API 支持】');
+            console.log('  - File API:', typeof File !== 'undefined' ? '✓' : '✗');
+            console.log('  - FormData:', typeof FormData !== 'undefined' ? '✓' : '✗');
+            console.log('  - Fetch:', typeof fetch !== 'undefined' ? '✓' : '✗');
+        });
+        
+        let selectedFile = null;
+        
+        // 點擊上傳區域打開檔案選擇器
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // 檔案拖拽
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+        
+        // 檔案選擇
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        function handleFileSelect(file) {
+            selectedFile = file;
+            
+            // 更新檔案資訊
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            fileInfo.classList.add('show');
+            
+            // 啟用分析按鈕
+            analyzeBtn.disabled = false;
+        }
+        
+        // 表情情緒分析按鈕點擊事件已移除，改為自動分析
+        
+        // 自動表情情緒分析函數
+        async function analyzeEmotionAutomatically() {
+            if (!selectedFile) {
+                console.warn('【警告】沒有選擇檔案，無法進行表情情緒分析');
+                return;
+            }
+            
+            try {
+                // 更新加載提示文本
+                const originalText = loadingSection.querySelector('p').textContent;
+                loadingSection.querySelector('p').textContent = '正在分析影片中的表情情緒...';
+                
+                // 建立 FormData 用於檔案上傳
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                console.log('【自動表情情緒分析】', {
+                    文件名: selectedFile.name,
+                    文件大小: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB',
+                    文件類型: selectedFile.type
+                });
+                
+                // 發送請求到後端
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分鐘超時
+                
+                console.log('【發送 HTTP 請求】POST /api/mbti/analyze-emotion');
+                
+                const response = await fetch('/api/mbti/analyze-emotion', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                console.log('【收到回應】狀態碼:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('【HTTP 錯誤】', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                let data = await response.json();
+                console.log('【表情情緒分析結果】', data);
+                
+                // 隱藏加載狀態（只在表情情緒分析完成時）
+                loadingSection.style.display = 'none';
+                resultsContent.style.display = 'block';
+                
+                // 恢復加載提示文本
+                loadingSection.querySelector('p').textContent = originalText;
+                
+                // 顯示表情情緒結果
+                if (data.success && data.data) {
+                    console.log('【顯示表情情緒結果】');
+                    displayEmotionResults(data.data);
+                } else {
+                    console.warn('【警告】表情情緒分析失敗:', data.error);
+                    // 不顯示錯誤，因為MBTI分析已成功
+                }
+                
+            } catch (error) {
+                // 隱藏加載狀態
+                loadingSection.style.display = 'none';
+                resultsContent.style.display = 'block';
+                console.error('【表情情緒分析錯誤】:', error);
+                console.warn('【警告】表情情緒分析失敗，但MBTI分析已成功');
+                // 不顯示錯誤，因為MBTI分析已成功
+            }
+        }
+        
+        // 顯示表情情緒分析結果
+        function displayEmotionResults(data) {
+            console.log('【displayEmotionResults】開始');
+            console.log('【displayEmotionResults】收到數據:', data);
+            
+            const emotionSection = document.getElementById('emotionSection');
+            const emotionResult = document.getElementById('emotionResult');
+            
+            if (!emotionSection) {
+                console.error('【錯誤】找不到 emotionSection 元素');
+                return;
+            }
+            
+            if (!emotionResult) {
+                console.error('【錯誤】找不到 emotionResult 元素');
+                return;
+            }
+            
+            console.log('【displayEmotionResults】清空內容');
+            emotionResult.innerHTML = '';
+            
+            // 定義表情情緒的中文名稱和顏色
+            const emotionConfig = {
+                'happy': { name: '開心', icon: '😊', color: '#FFD700' },
+                'sad': { name: '悲傷', icon: '😢', color: '#4169E1' },
+                'angry': { name: '憤怒', icon: '😠', color: '#FF6347' },
+                'surprised': { name: '驚訝', icon: '😮', color: '#FF8C00' },
+                'neutral': { name: '中立', icon: '😐', color: '#808080' },
+                'fear': { name: '害怕', icon: '😨', color: '#8B008B' },
+                'disgust': { name: '厭惡', icon: '🤢', color: '#228B22' }
+            };
+            
+            // 遍歷表情情緒數據
+            if (data && data.emotions && typeof data.emotions === 'object') {
+                console.log('【displayEmotionResults】開始添加表情項目，共', Object.keys(data.emotions).length, '項');
+                const emotionEntries = Object.entries(data.emotions);
+                console.log('【displayEmotionResults】emotionEntries:', emotionEntries);
+                
+                for (const [emotion, score] of emotionEntries) {
+                    const config = emotionConfig[emotion] || { name: emotion, icon: '😊', color: '#FFB74D' };
+                    const percentage = Math.round(score * 100);
+                    
+                    console.log(`【添加表情】${emotion}: ${percentage}%`);
+                    
+                    const emotionItem = document.createElement('div');
+                    emotionItem.className = 'emotion-item';
+                    emotionItem.innerHTML = `
+                        <div class="emotion-label">${config.icon} ${config.name}</div>
+                        <div class="emotion-value">${percentage}%</div>
+                        <div class="emotion-bar">
+                            <div class="emotion-fill" style="width: ${percentage}%; background: ${config.color};"></div>
+                        </div>
+                    `;
+                    emotionResult.appendChild(emotionItem);
+                }
+                console.log('【displayEmotionResults】表情項目添加完成，emotionResult innerHTML:', emotionResult.innerHTML);
+            } else {
+                console.warn('【警告】data.emotions 不存在或格式錯誤', data);
+            }
+            
+            console.log('【displayEmotionResults】設置 emotionSection 顯示');
+            emotionSection.style.removeProperty('display');
+            emotionSection.style.display = 'block';
+            emotionSection.classList.remove('hidden');
+            
+            console.log('【displayEmotionResults】emotionSection 元素狀態:');
+            console.log('  display:', window.getComputedStyle(emotionSection).display);
+            console.log('  visibility:', window.getComputedStyle(emotionSection).visibility);
+            
+            console.log('【displayEmotionResults】完成');
+        }
+        
+        // 分析按鈕點擊事件
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                errorMessage.textContent = '❌ 請先選擇檔案';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            // 隱藏錯誤訊息
+            errorMessage.classList.remove('show');
+            
+            // 顯示加載狀態
+            resultSection.classList.add('show');
+            loadingSection.style.display = 'block';
+            resultsContent.style.display = 'none';
+            
+            try {
+                // 建立 FormData 用於檔案上傳
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                console.log('【開始上傳】', {
+                    文件名: selectedFile.name,
+                    文件大小: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB',
+                    文件類型: selectedFile.type
+                });
+                console.log('【FormData 內容】');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`  ${key}:`, value);
+                }
+                
+                // 發送請求到後端 (添加超時)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分鐘超時
+                
+                console.log('【發送 HTTP 請求】POST /api/mbti/analyze');
+                
+                const response = await fetch('/api/mbti/analyze', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                    // 注意：不設置 Content-Type，讓瀏覽器自動設置為 multipart/form-data
+                });
+                
+                clearTimeout(timeoutId);
+                
+                console.log('【收到回應】狀態碼:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('【HTTP 錯誤】', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                let data = await response.json();
+                console.log('【解析成功】JSON 數據:', data);
+                
+                // 隱藏加載狀態
+                loadingSection.style.display = 'none';
+                resultsContent.style.display = 'block';
+                
+                // 檢查響應格式
+                console.log('【檢查數據格式】data:', data);
+                if (data.data && typeof data.data === 'object') {
+                    console.log('【檢測到 data.data 格式】');
+                    // 如果有 success 字段且為 false
+                    if (data.success === false) {
+                        console.error('【服務器返回錯誤】', data.error);
+                        errorMessage.textContent = '❌ ' + (data.error || '分析失敗，請重試');
+                        errorMessage.classList.add('show');
+                        return;
+                    }
+                    // 正常情況下 data 是實際的分析結果
+                    console.log('【顯示結果】');
+                    displayResults(data.data);
+                    // MBTI 分析完成後，自動分析表情情緒
+                    console.log('【開始自動表情情緒分析】');
+                    await analyzeEmotionAutomatically();
+                } else if (data.results || data.people_count !== undefined) {
+                    // 直接返回的是分析結果
+                    console.log('【直接分析結果格式】');
+                    displayResults(data);
+                    // MBTI 分析完成後，自動分析表情情緒
+                    console.log('【開始自動表情情緒分析】');
+                    await analyzeEmotionAutomatically();
+                } else if (data.success === false) {
+                    // 服務器明確返回錯誤
+                    console.error('【後端錯誤】', data.error);
+                    errorMessage.textContent = '❌ ' + (data.error || '分析失敗，請重試');
+                    errorMessage.classList.add('show');
+                } else {
+                    console.error('【無效的響應格式】', data);
+                    errorMessage.textContent = '❌ 收到無效的分析結果，請重試';
+                    errorMessage.classList.add('show');
+                }
+                
+            } catch (error) {
+                loadingSection.style.display = 'none';
+                resultsContent.style.display = 'block';
+                console.error('【上傳/分析錯誤】:', error);
+                console.error('【錯誤堆棧】:', error.stack);
+                
+                let errorMsg = error.message;
+                if (error.name === 'AbortError') {
+                    errorMsg = '分析超時，請檢查網路連接或嘗試上傳較小的檔案';
+                }
+                
+                errorMessage.textContent = '❌ ' + errorMsg;
+                errorMessage.classList.add('show');
+            }
+        });
+        
+        function getTypeLabelInChinese(dimensionKey, typeValue) {
+            const typeMap = {
+                'introversion_extroversion': {
+                    'I': '內向',
+                    'E': '外向'
+                },
+                'sensing_intuition': {
+                    'S': '感知',
+                    'N': '直覺'
+                },
+                'thinking_feeling': {
+                    'T': '思維',
+                    'F': '情感'
+                },
+                'judging_perceiving': {
+                    'J': '判斷',
+                    'P': '感知'
+                }
+            };
+            
+            if (typeMap[dimensionKey] && typeMap[dimensionKey][typeValue]) {
+                return typeMap[dimensionKey][typeValue];
+            }
+            return typeValue;
+        }
+        
+        function displayResults(result) {
+            console.log('displayResults 收到:', result);
+            
+            // 檢查是否為多人分析結果
+            if (result && result.results && Array.isArray(result.results)) {
+                displayMultiplePeopleResults(result);
+            } else if (result && result.mbti_type) {
+                displaySinglePersonResult(result);
+            } else {
+                console.error('無法識別的結果格式:', result);
+                errorMessage.textContent = '❌ 無法解析分析結果，請重試';
+                errorMessage.classList.add('show');
+            }
+        }
+        
+        function displaySinglePersonResult(result) {
+            // MBTI 類型
+            const mbtiType = result.mbti_type || '未知';
+            let typeDisplay = mbtiType;
+            
+            // 添加中文類型名稱
+            if (result.mbti_name) {
+                typeDisplay = `${mbtiType}<div style="font-size: 0.5em; margin-top: 10px; color: #999;">${result.mbti_name}</div>`;
+            }
+            document.getElementById('mbtiType').innerHTML = typeDisplay;
+            
+            // 信心度
+            const confidence = result.confidence || 0;
+            document.getElementById('confidenceValue').textContent = confidence;
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+            
+            // 詳細分析
+            const analysisGrid = document.getElementById('analysisGrid');
+            analysisGrid.innerHTML = '';
+            
+            const analysis = result.analysis || {};
+            const analysisKeys = [
+                { key: 'introversion_extroversion', label: '內向 (I) / 外向 (E)' },
+                { key: 'sensing_intuition', label: '感知 (S) / 直覺 (N)' },
+                { key: 'thinking_feeling', label: '思維 (T) / 情感 (F)' },
+                { key: 'judging_perceiving', label: '判斷 (J) / 感知 (P)' }
+            ];
+            
+            analysisKeys.forEach(({ key, label }) => {
+                const item = analysis[key] || {};
+                const typeValue = item.type || '未知';
+                const typeLabel = getTypeLabelInChinese(key, typeValue);
+                const html = `
+                    <div class="analysis-item">
+                        <div class="analysis-label">${label}</div>
+                        <div class="analysis-type">${typeValue} - ${typeLabel}</div>
+                        <div class="analysis-description">${item.description || ''}</div>
+                        <div class="analysis-score">匹配度: ${item.score || 0}%</div>
+                    </div>
+                `;
+                analysisGrid.innerHTML += html;
+            });
+            
+            // 行為特徵
+            const traits = result.behavioral_traits || [];
+            const traitsSection = document.getElementById('traitsSection');
+            if (traits.length > 0) {
+                let traitsHTML = '<h3>🎭 觀察到的行為特徵</h3><div class="trait-list">';
+                traits.forEach(trait => {
+                    traitsHTML += `<span class="trait-badge">${trait}</span>`;
+                });
+                traitsHTML += '</div>';
+                traitsSection.innerHTML = traitsHTML;
+            }
+            
+            // 建議
+            document.getElementById('recommendations').textContent = 
+                result.recommendations || '根據分析結果，該人格類型具有獨特的優勢和發展空間。';
+        }
+        
+        function displayMultiplePeopleResults(result) {
+            // 清空主要結果區域，改為顯示多人分析
+            const resultsContent = document.getElementById('resultsContent');
+            const peopleCount = result.people_count || result.results.length;
+            
+            let html = `<h2 style="color: #333; margin-bottom: 20px;">🎥 檢測到 ${peopleCount} 個人物</h2>
+                       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;">`;
+            
+            if (!result.results || !Array.isArray(result.results)) {
+                html += '<div style="color: #999; padding: 20px;">無有效的人物分析結果</div>';
+            } else {
+                result.results.forEach((person, index) => {
+                    if (person && typeof person === 'object') {
+                        html += generatePersonCard(person, index + 1);
+                    }
+                });
+            }
+            
+            html += '</div>';
+            resultsContent.innerHTML = html;
+        }
+        
+        function generatePersonCard(person, personNumber) {
+            const mbtiType = person.mbti_type || '未知';
+            const mbtiName = person.mbti_name || '';
+            const confidence = person.confidence || 0;
+            const location = person.location || '未標註位置';
+            const gender = person.gender || '未知';
+            const ageRange = person.age_range || '未知';
+            const identity = person.identity || '未知';
+            
+            let personCard = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <h3 style="color: #333; margin: 0;">👤 人物 ${personNumber}</h3>
+                        <span style="background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em;">
+                            ${location}
+                        </span>
+                    </div>
+                    
+                    <!-- 基本信息：性別、年齡、身分 -->
+                    <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 0.9em;">
+                            <div>
+                                <span style="color: #999; font-size: 0.85em;">性別</span>
+                                <div style="color: #333; font-weight: 600;">
+                                    ${gender === '男性' ? '👨' : '👩'} ${gender}
+                                </div>
+                            </div>
+                            <div>
+                                <span style="color: #999; font-size: 0.85em;">年齡</span>
+                                <div style="color: #333; font-weight: 600;">🎂 ${ageRange}</div>
+                            </div>
+                            <div>
+                                <span style="color: #999; font-size: 0.85em;">身分</span>
+                                <div style="color: #333; font-weight: 600;">💼 ${identity}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 2.5em; font-weight: bold; color: #667eea; letter-spacing: 5px;">
+                            ${mbtiType}
+                        </div>
+                        ${mbtiName ? `<div style="font-size: 1em; color: #999; margin-top: 5px; font-weight: 600;">${mbtiName}</div>` : ''}
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">信心度：${confidence}%</div>
+                        <div style="height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden;">
+                            <div style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: ${confidence}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 表情情緒分析 -->
+                    ${person.emotions ? `
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #333; margin-bottom: 10px; font-size: 0.95em;">😊 表情情緒分析</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    ` : ''}
+                    ${person.emotions ? Object.entries(person.emotions).map(([emotion, score]) => {
+                        const emotionConfig = {
+                            'happy': { name: '開心', icon: '😊', color: '#FFD700' },
+                            'sad': { name: '悲傷', icon: '😢', color: '#4169E1' },
+                            'angry': { name: '憤怒', icon: '😠', color: '#FF6347' },
+                            'surprised': { name: '驚訝', icon: '😮', color: '#FF8C00' },
+                            'neutral': { name: '中立', icon: '😐', color: '#808080' },
+                            'fear': { name: '害怕', icon: '😨', color: '#8B008B' },
+                            'disgust': { name: '厭惡', icon: '🤢', color: '#228B22' }
+                        };
+                        const config = emotionConfig[emotion] || { name: emotion, icon: '😊', color: '#FFB74D' };
+                        const percentage = Math.round(score * 100);
+                        return `
+                            <div style="background: #fff8f0; padding: 10px; border-radius: 5px; border-left: 3px solid #ff9800;">
+                                <div style="font-weight: 600; color: #ff9800; margin-bottom: 3px; font-size: 0.9em;">
+                                    ${config.icon} ${config.name}
+                                </div>
+                                <div style="height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-bottom: 3px;">
+                                    <div style="height: 100%; background: ${config.color}; width: ${percentage}%;"></div>
+                                </div>
+                                <div style="font-size: 0.8em; color: #666; font-weight: 600;">${percentage}%</div>
+                            </div>
+                        `;
+                    }).join('') : ''}
+                    ${person.emotions ? `
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #333; margin-bottom: 10px; font-size: 0.95em;">📊 性格維度分析</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            `;
+            
+            const analysis = person.analysis || {};
+            const analysisKeys = [
+                { key: 'introversion_extroversion', label: '內向/外向' },
+                { key: 'sensing_intuition', label: '感知/直覺' },
+                { key: 'thinking_feeling', label: '思維/情感' },
+                { key: 'judging_perceiving', label: '判斷/感知' }
+            ];
+            
+            analysisKeys.forEach(({ key, label }) => {
+                const item = analysis[key] || {};
+                const typeValue = item.type || '?';
+                const typeLabel = getTypeLabelInChinese(key, typeValue);
+                const score = item.score || 0;
+                const description = item.description || '';
+                
+                personCard += `
+                    <div style="background: white; padding: 12px; border-radius: 5px; border: 1px solid #e0e0e0;">
+                        <div style="font-weight: 600; color: #667eea; margin-bottom: 5px; font-size: 0.9em;">
+                            ${label}: ${typeValue}
+                        </div>
+                        <div style="color: #666; font-size: 0.85em; margin-bottom: 8px; font-weight: 500;">
+                            ${typeLabel}
+                        </div>
+                        <div style="height: 5px; background: #e0e0e0; border-radius: 2px; overflow: hidden; margin-bottom: 8px;">
+                            <div style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: ${score}%;"></div>
+                        </div>
+                        <div style="height: 5px; background: #f0f0f0; border-radius: 2px; text-align: right; font-size: 0.75em; color: #999; padding-top: 2px;">
+                            ${score}%
+                        </div>
+                        ${description ? `
+                        <div style="background: #f9fafb; padding: 8px; border-left: 3px solid #667eea; margin-top: 8px; border-radius: 3px; font-size: 0.85em; color: #555; line-height: 1.4;">
+                            📝 ${description}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            personCard += `</div></div>`;
+            
+            // 行為特徵
+            const traits = person.behavioral_traits || [];
+            if (traits.length > 0) {
+                personCard += `
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #333; margin-bottom: 10px; font-size: 0.95em;">🎭 行為特徵</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                `;
+                traits.forEach(trait => {
+                    personCard += `<span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; border-radius: 15px; font-size: 0.85em;">${trait}</span>`;
+                });
+                personCard += `</div></div>`;
+            }
+            
+            // 建議
+            if (person.recommendations) {
+                personCard += `
+                    <div style="background: #fff3e0; padding: 12px; border-radius: 5px; border-left: 3px solid #ff9800;">
+                        <h4 style="color: #e65100; margin: 0 0 8px 0; font-size: 0.9em;">💡 發展建議</h4>
+                        <p style="color: #666; margin: 0; font-size: 0.9em; line-height: 1.4;">${person.recommendations}</p>
+                    </div>
+                `;
+            }
+            
+            personCard += `</div>`;
+            return personCard;
+        }
+        
+        function resetAnalysis() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            analyzeBtn.disabled = true;
+            resultSection.classList.remove('show');
+            loadingSection.style.display = 'none';
+            resultsContent.style.display = 'block';
+            errorMessage.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

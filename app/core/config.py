@@ -85,17 +85,23 @@ class Settings(BaseSettings):
     AZURE_API_KEY: Optional[str] = None
     AZURE_END_POINT: Optional[str] = None
     
-    # CWB 配置
-    CWB_API_TOKEN: Optional[str] = None
-    CWB_BASE_URL: Optional[str] = None
+    # Azure Speech-to-Text 配置
+    AZURE_SPEECH_API_KEY: Optional[str] = None
+    AZURE_SPEECH_ENDPOINT: Optional[str] = None
+    AZURE_SPEECH_REGION: str = "eastus"
     
-    # Ollama 配置
-    OLLAMA_HOST: Optional[str] = None
-    OLLAMA_MODEL: Optional[str] = None
+    # AWS 配置 (用于情感分析)
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_DEFAULT_REGION: str = "us-east-1"
 
     # Google ADK 配置
     ADK_BASE_URL: str = "https://llm.89.com.tw"
     ADK_APP_NAME: str = "agents"
+    
+    # Google Gemini 配置 (用於 MBTI 分析)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-3-pro-preview"
     
     class Config:
         env_file = ".env"

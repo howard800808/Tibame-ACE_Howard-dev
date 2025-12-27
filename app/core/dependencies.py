@@ -1,6 +1,7 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.services.user_service import user_service
@@ -48,3 +49,33 @@ async def get_current_active_user(
             detail="使用者未啟用"
         )
     return current_user
+
+
+async def get_optional_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """取得可選的當前使用者 (無 token 時返回 None)"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    
+    # 解析 Bearer token
+    if not auth_header.startswith("Bearer "):
+        return None
+    
+    token = auth_header[7:]  # 移除 "Bearer " 前綴
+    
+    payload = decode_access_token(token)
+    if payload is None:
+        return None
+    
+    username: str = payload.get("sub")
+    if username is None:
+        return None
+    
+    user = user_service.get_user_by_username(db, username=username)
+    if user and not user.is_active:
+        return None
+    
+    return user
