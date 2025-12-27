@@ -60,3 +60,16 @@ async def linebot_dashboard_page(request: Request):
 async def linebot_department_tasks(request: Request, department_code: str):
     """部門任務管理頁面"""
     return await linebot_view.department_tasks(request, department_code)
+
+
+@router.get("/service-dashboard", response_class=HTMLResponse)
+async def service_dashboard_page(request: Request):
+    """ACE服務管理前台頁面"""
+    return templates.TemplateResponse(
+        "ace_service_dashboard.html",
+        {
+            "request": request,
+            "title": "ACE服務管理前台",
+            "header_title": "ACE服務管理前台"
+        }
+    )

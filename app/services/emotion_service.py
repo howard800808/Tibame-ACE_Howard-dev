@@ -221,7 +221,13 @@ class EmotionService:
                 "face_id": i + 1,
                 "bounding_box": face.get('BoundingBox', {}),
                 "confidence": face.get('Confidence', 0),
-                "emotions": {}
+                "emotions": {},
+                "age_range": face.get('AgeRange', {}),
+                "gender": face.get('Gender', {}),
+                "eyeglasses": face.get('Eyeglasses', {}),
+                "sunglasses": face.get('Sunglasses', {}),
+                "beard": face.get('Beard', {}),
+                "mustache": face.get('Mustache', {})
             }
             
             # 提取該臉部的情緒資訊
