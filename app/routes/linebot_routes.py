@@ -35,7 +35,8 @@ async def webhook_unified(
     body = await request.body()
     body_str = body.decode('utf-8')
     
-    print(f"\n[Webhook] 收到統一端點請求，簽名: {x_line_signature[:20] if x_line_signature else 'None'}...")
+    signature_prefix = x_line_signature[:15] if x_line_signature else 'None'
+    print(f"\n[Webhook] 收到統一端點請求，簽名: {signature_prefix}...")
     
     # 檢查是否為空請求（LINE 驗證或健康檢查）
     if not body_str:
@@ -46,7 +47,9 @@ async def webhook_unified(
     # 系統會逐一檢查每個部門的 Secret，找到簽名匹配的那個
     db = SessionLocal()
     try:
-        departments = db.query(Department).filter(Department.is_active == True).all()
+        # 不過濾 is_active，因為 DB 中沒有此欄位
+        departments = db.query(Department).all()
+        # print(f"[Webhook] 從資料庫載入 {len(departments)} 個部門")  # 減少日誌
     finally:
         db.close()
         
@@ -56,7 +59,7 @@ async def webhook_unified(
         # 使用 v3 驗證簽名
         if linebot_service.validate_signature(dept.code, body_str, x_line_signature):
             matched_dept = dept
-            print(f"[Webhook] [OK] 簽名匹配: {dept.code} ({dept.name})")
+            print(f"[Webhook] ✅ 簽名匹配成功: {dept.code} ({dept.name_zh})")
             break
     
     if not matched_dept:
@@ -284,7 +287,7 @@ async def send_demo_single_task(
     dept = department_code.upper()
 
     # 從 MySQL 獲取任務
-    bubbles = await linebot_service.get_tasks_for_department(dept)
+    bubbles = linebot_service.get_tasks_for_department(dept)
     
     if not bubbles:
         return {"status": "error", "message": f"部門 {dept} 無任務資料"}

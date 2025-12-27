@@ -390,25 +390,50 @@ class LineBotService:
         db = SessionLocal()
         try:
             departments = db.query(Department).all()
+            print(f'\n[初始化] 從資料庫載入 {len(departments)} 個部門')
+            
             for dept in departments:
                 if dept.channel_access_token and dept.channel_secret:
                     self.department_creds[dept.code] = (dept.channel_access_token, dept.channel_secret)
                     self.last_errors.pop(dept.code, None)
-                    print(f'[OK] 初始化部門 {dept.code} ({dept.name_zh}) Credentials')
+                    print(f'[OK] 初始化部門 {dept.code} ({dept.name_zh})')
+                    print(f'     Token: {dept.channel_access_token[:20]}...')
+                    print(f'     Secret: {dept.channel_secret[:10]}...')
                 else:
                     print(f'[WARN] 部門 {dept.code} 缺少 Token 或 Secret')
+            
+            print(f'[初始化] 完成，共 {len(self.department_creds)} 個部門可用\n')
         except Exception as e:
             print(f'[ERROR] 初始化部門失敗: {e}')
+            import traceback
+            traceback.print_exc()
         finally:
             db.close()
 
     def validate_signature(self, department_code: str, body: str, signature: str) -> bool:
+        """驗證 LINE Webhook 簽名
+        
+        Args:
+            department_code: 部門代碼
+            body: 請求內容 (str)
+            signature: X-Line-Signature 標頭值 (str)
+        
+        Returns:
+            bool: 驗證是否成功
+        """
         creds = self.department_creds.get(department_code)
         if not creds:
             return False
+        
         _, secret = creds
-        validator = SignatureValidator(secret)
-        return validator.validate(body, signature)
+        try:
+            validator = SignatureValidator(secret)
+            # LINE SDK v3 的 validate 方法需要 str 參數，不是 bytes
+            result = validator.validate(body, signature)
+            return result
+        except Exception as e:
+            print(f"[Signature] ❌ 部門 {department_code} 驗證異常: {e}")
+            return False
 
     def _get_quick_reply(self):
         # 取得通用 Quick Reply 按鈕
