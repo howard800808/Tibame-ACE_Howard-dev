@@ -9,10 +9,15 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.routes import auth_router, user_router, system_router, emotion_router, video_router, mbti_router, adk_router, task_router
 from app.routes.linebot_routes import router as linebot_router, webhook_unified
+from app.routes.emotional_task_routes import router as emotional_task_router
 from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view
 from app.views.linebot_view import linebot_view
+from app.views.emotional_task_view import emotional_task_view
 from app.services.linebot_service import linebot_service
+
+# Models: ensure table definitions are loaded before Base.metadata.create_all
+from app.models import emotional_task  # noqa: F401
 
 # 建立 FastAPI 應用程式 (MVC 架構)
 app = FastAPI(
@@ -64,6 +69,7 @@ app.include_router(emotion_router, prefix="/api")
 app.include_router(video_router, prefix="/api")
 app.include_router(adk_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
+app.include_router(emotional_task_router, prefix="/api")  # 感動派工路由
 app.include_router(linebot_router)  # LINE Bot 路由
 
 # [相容性修正] 註冊 /callback 路由以支援舊版 Webhook 設定
@@ -117,6 +123,12 @@ async def mbti_analysis_page(request: Request):
 async def tasks_page(request: Request):
     """派工單列表頁面 (需要登入)"""
     return await task_view.task_list_page(request)
+
+
+@app.get("/emotional-tasks", response_class=HTMLResponse)
+async def emotional_tasks_page(request: Request):
+    """感動派工列表頁面 (需要登入)"""
+    return await emotional_task_view.emotional_task_list_page(request)
 
 
 # LINE Bot 管理介面路由

@@ -16,8 +16,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # 資料庫配置 (SQLAlchemy)
+    # 統一使用 ace 資料庫；.env 可覆蓋此值
     # DATABASE_URL: str = "sqlite:///./admin.db"
-    DATABASE_URL: str = "mysql+pymysql://root:1234@localhost:3306/tibame_ace_db"
+    DATABASE_URL: str = "mysql+pymysql://root:1234@localhost:3306/ace"
     SQLALCHEMY_MAX_OVERFLOW: Optional[int] = None
     SQLALCHEMY_WARN_20: Optional[int] = None
     DATABASE_POOL_CONNECTION_MIN: Optional[int] = None

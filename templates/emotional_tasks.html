@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/style.css?v={{ range(1, 10000) | random }}">
+    <script src="/static/script.js?v={{ range(1, 10000) | random }}"></script>
+    <style>
+        .task-table-container {
+            background: #2c2c2c; /* 暗灰底 */
+            color: #e0e0e0;      /* 淺色文字 */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .task-table th, .task-table td {
+            padding: 8px 10px; /* 縮小內距 */
+            text-align: left;
+            border-bottom: 1px solid #444;
+            font-size: 0.9rem; /* 縮小字體 */
+        }
+        .task-table th {
+            background-color: #383838;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap; /* 防止標題換行 */
+        }
+        .task-table tr:hover {
+            background-color: #383838;
+        }
+        .status-badge {
+            padding: 2px 6px; /* 縮小標籤 */
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-pending { background: #ffeeba; color: #856404; }
+        .status-dispatched { background: #b8daff; color: #004085; }
+        .status-processing { background: #c3e6cb; color: #155724; }
+        .status-completed { background: #d6d8d9; color: #1b1e21; }
+        
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px; /* 縮小間距 */
+            align-items: center;
+        }
+        .filter-select {
+            padding: 6px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #444;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        /* 分頁控制項樣式 */
+        .pagination-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        .pagination-btn {
+            padding: 5px 10px;
+            background-color: #444;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #555;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-info {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <!-- 側邊選單 -->
+    {% include 'sidebar.html' %}
+
+    <!-- 主內容區 -->
+    <div class="main-content">
+        <div class="content-wrapper">
+            <div class="container">
+                <!-- Header -->
+                {% include 'top.html' %}
+
+                <!-- Emotional Task List Section -->
+                <div class="task-table-container">
+                    <div class="filter-bar">
+                        <select id="statusFilter" class="filter-select" onchange="loadTasks()">
+                            <option value="">所有狀態</option>
+                            <option value="pending">任務未執行</option>
+                            <option value="in_progress">任務執行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                        <button class="btn-primary" onclick="loadTasks()">重新整理</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="task-table">
+                            <thead>
+                                <tr>
+                                    <th>任務代碼</th>                                    
+                                    <th>部門名稱</th>
+                                    <th>執行日期</th>
+                                    <th>地點代碼</th>
+                                    <th>優先次序</th>
+                                    <th>任務標題</th>
+                                    <th>任務內容</th>
+                                    <th>備註</th>
+                                    <th>任務狀態</th>
+                                    <th>預定時間</th>
+                                    <th>完成時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskListBody">
+                                <tr>
+                                    <td colspan="12" style="text-align: center;">載入中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分頁控制項 -->
+                    <div id="paginationControls" class="pagination-controls"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allTasks = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth(); // 驗證登入
+            loadTasks();
+        });
+
+        async function loadTasks() {
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                let url = '/api/emotional-tasks/';
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    allTasks = await response.json();
+                    currentPage = 1; // 重置為第一頁
+                    renderCurrentPage();
+                } else {
+                    console.error('Failed to load emotional tasks');
+                    document.getElementById('taskListBody').innerHTML = '<tr><td colspan="12" style="text-align: center; color: red;">載入失敗</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderCurrentPage() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            // 1. 篩選
+            const filteredTasks = statusFilter 
+                ? allTasks.filter(t => t.status === statusFilter)
+                : allTasks;
+
+            // 2. 分頁計算
+            const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            if (currentPage < 1) currentPage = 1;
+            
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageTasks = filteredTasks.slice(startIndex, endIndex);
+
+            // 3. 渲染表格
+            renderTable(pageTasks);
+
+            // 4. 渲染分頁控制項
+            renderPaginationControls(filteredTasks.length, totalPages);
+        }
+
+        function formatTime(val) {
+            if (!val) return '';
+            const s = String(val);
+            const parts = s.split(':');
+            const hh = (parts[0] ?? '').padStart(2, '0');
+            const mm = (parts[1] ?? '00').padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+
+        function renderTable(tasks) {
+            const tbody = document.getElementById('taskListBody');
+            tbody.innerHTML = '';
+
+            if (tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align: center;">目前沒有感動派工任務</td></tr>';
+                return;
+            }
+
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                
+                let statusClass = 'status-pending';
+                let statusText = '待處理';
+
+                switch(task.status) {
+                    case 'pending': statusClass = 'status-pending'; statusText = '待處理'; break;
+                    case 'assigned': statusClass = 'status-dispatched'; statusText = '已指派'; break;
+                    case 'in_progress': statusClass = 'status-processing'; statusText = '進行中'; break;
+                    case 'completed': statusClass = 'status-completed'; statusText = '已完成'; break;
+                    case 'cancelled': statusClass = 'status-completed'; statusText = '已取消'; break;
+                }
+
+                // 優先次序僅顯示英文代號 P/E/F
+                const stageCode = (task.sequence_stage || '-').toString().toUpperCase();
+
+                const start = formatTime(task.time_start);
+                const end = formatTime(task.time_end);
+                const scheduled = (start || end)
+                    ? `${start}${start && end ? '~' : ''}${end}`
+                    : '-';
+
+                // 完成時間僅顯示 LineBot 回傳的完成時間 (completed_at)
+                const completedAt = task.completed_at
+                    ? new Date(task.completed_at).toLocaleString()
+                    : '-';
+
+                row.innerHTML = `
+                    <td>${task.task_id || '-'}</td>
+                    <td>${task.dept_name || '-'}</td>
+                    <td>${task.task_date || '-'}</td>
+                    <td>${task.location_code || '-'}</td>
+                    <td>${stageCode}</td>
+                    <td>${task.task_title || '-'}</td>
+                    <td>${task.action_item || '-'}</td>
+                    <td>${task.note || '-'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${scheduled}</td>
+                    <td>${completedAt}</td>
+                    <td>
+                        <button onclick="viewTask(${task.id || 0})" style="padding: 2px 6px; font-size: 12px; cursor: pointer;">查看</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderPaginationControls(totalItems, totalPages) {
+            const container = document.getElementById('paginationControls');
+            if (totalItems === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+            container.innerHTML = `
+                <span class="pagination-info">顯示 ${startItem} - ${endItem} 筆，共 ${totalItems} 筆</span>
+                <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一頁</button>
+                <span style="color: #fff;">第 ${currentPage} / ${totalPages} 頁</span>
+                <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>下一頁</button>
+            `;
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderCurrentPage();
+        }
+
+        function viewTask(id) {
+            alert('查看感動派工任務詳情: ' + id);
+            // 未來可實作跳轉到詳情頁或開啟 Modal
+        }
+    </script>
+</body>
+</html>
