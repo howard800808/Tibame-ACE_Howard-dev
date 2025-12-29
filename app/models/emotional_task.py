@@ -28,5 +28,13 @@ class EmotionalTask(Base):
 
     status = Column(String(30), nullable=True, index=True, default="pending")
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # 任務回報欄位
+    report_is_finished = Column(String(10), nullable=True, comment="是否順利完成 (yes/no)")
+    report_details = Column(Text, nullable=True, comment="補充說明")
+    report_has_interaction = Column(String(10), nullable=True, comment="與顧客有互動嗎 (yes/no)")
+    report_sentiment = Column(String(20), nullable=True, comment="顧客情緒 (positive/neutral/negative)")
+    report_remarks = Column(Text, nullable=True, comment="備註事項")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

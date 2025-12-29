@@ -292,7 +292,8 @@ class LineBotController:
                                     time=fmt_time_range(getattr(obj, 'time_start', None), getattr(obj, 'time_end', None)),
                                     remark=getattr(obj, 'note', None) or '',
                                     status=map_status(getattr(obj, 'status', None)),
-                                    task_id=getattr(obj, 'task_id', None)
+                                    task_id=getattr(obj, 'task_id', None),
+                                    db_id=getattr(obj, 'id', None)
                                 )
 
                             # 產生更新後的 Flex Message 任務卡

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.emotional_task import EmotionalTask
-from app.schemas.emotional_task_schema import EmotionalTaskResponse
+from app.schemas.emotional_task_schema import EmotionalTaskResponse, EmotionalTaskReportCreate
 from typing import List
 
 # 兩份資料來源檔
@@ -117,6 +117,18 @@ def get_emergency_emotional_tasks(
     )
     return [EmotionalTaskResponse.model_validate(t) for t in tasks]
 
+@router.get("/{task_id}", response_model=EmotionalTaskResponse)
+def get_emotional_task(
+    task_id: int,
+    db: Session = Depends(get_db)
+):
+    """取得單一感動派工任務 (公開 API)"""
+    task = db.query(EmotionalTask).filter(EmotionalTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return EmotionalTaskResponse.model_validate(task)
+
+
 @router.patch("/{task_id}/status")
 def update_emotional_task_status(
     task_id: int,
@@ -130,7 +142,43 @@ def update_emotional_task_status(
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.status = status
+    if status == 'completed':
+        task.completed_at = datetime.utcnow()
     task.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+@router.post("/{task_id}/report")
+def submit_emotional_task_report(
+    task_id: int,
+    report_data: EmotionalTaskReportCreate,
+    db: Session = Depends(get_db)
+):
+    """提交感動任務回報 (公開 API，供 LIFF 使用)"""
+    task = db.query(EmotionalTask).filter(EmotionalTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Check if already reported
+    if task.status == 'completed' or task.report_is_finished:
+        raise HTTPException(status_code=409, detail="Task already reported")
+
+    # Update report fields
+    task.report_is_finished = report_data.report_is_finished
+    task.report_details = report_data.report_details
+    task.report_has_interaction = report_data.report_has_interaction
+    task.report_sentiment = report_data.report_sentiment
+    task.report_remarks = report_data.report_remarks
+    
+    # Update status to completed
+    task.status = 'completed'
+    task.completed_at = datetime.utcnow()
+    
+    # Update timestamp
+    task.updated_at = datetime.utcnow()
+    
     db.commit()
     db.refresh(task)
     return task

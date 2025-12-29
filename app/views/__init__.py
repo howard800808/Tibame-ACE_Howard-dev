@@ -8,11 +8,13 @@ from .dashboard_view import dashboard_view
 from .user_view import user_view
 from .mbti_view import mbti_view
 from .task_view import task_view
+from .emotional_task_view import emotional_task_view
 
 __all__ = [
     "auth_view",
     "dashboard_view",
     "user_view",
-    "task_view"
+    "task_view",
     "mbti_view",
+    "emotional_task_view",
 ]

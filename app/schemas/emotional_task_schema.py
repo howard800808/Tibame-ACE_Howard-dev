@@ -18,6 +18,21 @@ class EmotionalTaskBase(BaseModel):
     note: Optional[str] = None
     status: Optional[str] = None
     completed_at: Optional[datetime] = None
+    
+    # 回報欄位
+    report_is_finished: Optional[str] = None
+    report_details: Optional[str] = None
+    report_has_interaction: Optional[str] = None
+    report_sentiment: Optional[str] = None
+    report_remarks: Optional[str] = None
+
+
+class EmotionalTaskReportCreate(BaseModel):
+    report_is_finished: str
+    report_details: Optional[str] = None
+    report_has_interaction: str
+    report_sentiment: str
+    report_remarks: Optional[str] = None
 
 
 class EmotionalTaskResponse(EmotionalTaskBase):

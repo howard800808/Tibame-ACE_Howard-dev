@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任務回報</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
+        .hotel-navy { background-color: #1A3B5D; }
+        .hotel-text-navy { color: #1A3B5D; }
+        .hotel-gold { color: #C5A065; }
+        /* 自定義選取樣式 */
+        input:checked + label {
+            border-color: #1A3B5D;
+            background-color: #eef2ff;
+            color: #1A3B5D;
+            font-weight: bold;
+        }
+        /* 情緒按鈕專用選取 */
+        input[name="sentiment"]:checked + label.sent-pos { background-color: #188038; color: white; border-color: #188038; }
+        input[name="sentiment"]:checked + label.sent-neu { background-color: #5A6A7B; color: white; border-color: #5A6A7B; }
+        input[name="sentiment"]:checked + label.sent-neg { background-color: #D93025; color: white; border-color: #D93025; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <header class="hotel-navy text-white p-5 sticky top-0 z-50 shadow-md">
+        <div class="flex justify-between items-end">
+            <div>
+                <p class="text-xs text-gray-400 font-bold tracking-wider mb-1" id="dept_name">HK 房務部</p>
+                <h1 class="text-2xl font-bold" id="room_no">Room 1205</h1>
+            </div>
+            <div class="text-right">
+                <span class="bg-red-600 text-xs font-bold px-2 py-1 rounded">P</span>
+            </div>
+        </div>
+    </header>
+
+    <form id="reportForm" class="p-4 space-y-6">
+        
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="hotel-text-navy font-bold text-lg mb-1">1. 是否順利完成？</h3>
+            <p class="text-xs text-gray-400 mb-3">請確認現場狀況是否符合驗收標準。</p>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <input type="radio" name="is_finished" id="finish_yes" value="yes" class="hidden" checked>
+                    <label for="finish_yes" class="block text-center border rounded-lg py-3 cursor-pointer text-gray-500 hover:bg-gray-50 transition">
+                        是 (Yes)
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <input type="radio" name="is_finished" id="finish_no" value="no" class="hidden">
+                    <label for="finish_no" class="block text-center border rounded-lg py-3 cursor-pointer text-gray-500 hover:bg-gray-50 transition">
+                        否 (No)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="hotel-text-navy font-bold text-lg mb-1">2. 補充說明 / 微調查</h3>
+            <textarea name="details" rows="2" class="w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500" placeholder="例如：甜度適合嗎？佈置喜歡嗎？"></textarea>
+            <div class="mt-2 text-right">
+                <button type="button" class="text-xs text-gray-500 flex items-center justify-end gap-1 ml-auto">
+                    <span>🎤 語音輸入 (模擬)</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="hotel-text-navy font-bold text-lg mb-1">3. 與顧客有互動嗎？</h3>
+            <div class="flex gap-3 mt-3">
+                <div class="flex-1">
+                    <input type="radio" name="has_interaction" id="interact_yes" value="yes" class="hidden">
+                    <label for="interact_yes" class="block text-center border rounded-lg py-2 cursor-pointer text-gray-500 transition">
+                        有 (Yes)
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <input type="radio" name="has_interaction" id="interact_no" value="no" class="hidden" checked>
+                    <label for="interact_no" class="block text-center border rounded-lg py-2 cursor-pointer text-gray-500 transition">
+                        無 (No)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="hotel-text-navy font-bold text-lg mb-1">4. 顧客情緒判斷</h3>
+            <div class="flex gap-2 mt-3">
+                <div class="flex-1">
+                    <input type="radio" name="sentiment" id="sent_pos" value="positive" class="hidden">
+                    <label for="sent_pos" class="sent-pos block text-center border border-green-600 text-green-700 font-bold rounded-lg py-2 cursor-pointer transition">
+                        正向
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <input type="radio" name="sentiment" id="sent_neu" value="neutral" class="hidden" checked>
+                    <label for="sent_neu" class="sent-neu block text-center border border-gray-500 text-gray-600 font-bold rounded-lg py-2 cursor-pointer transition">
+                        中性
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <input type="radio" name="sentiment" id="sent_neg" value="negative" class="hidden">
+                    <label for="sent_neg" class="sent-neg block text-center border border-red-600 text-red-600 font-bold rounded-lg py-2 cursor-pointer transition">
+                        負向
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="hotel-text-navy font-bold text-lg mb-1">5. 備註事項</h3>
+            <textarea name="remarks" rows="3" class="w-full border rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500" placeholder="請補充其他重要事項..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full hotel-navy text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition text-lg">
+            確認送出 (Submit)
+        </button>
+
+    </form>
+
+    <script>
+        // 初始化 LIFF (請填入您的 LIFF ID)
+        const LIFF_ID = "YOUR_LIFF_ID_HERE"; 
+        // 確保 task_id 是數字，如果模板渲染失敗則預設為 0
+        const TASK_ID = parseInt("{{ task_id }}") || 0;
+
+        async function main() {
+            // await liff.init({ liffId: LIFF_ID });
+            // if (!liff.isLoggedIn()) {
+            //     liff.login();
+            // }
+            
+            // Fetch task details
+            try {
+                const response = await fetch(`/api/emotional-tasks/${TASK_ID}`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                if (response.ok) {
+                    const task = await response.json();
+                    document.getElementById('dept_name').textContent = task.dept_name || '部門';
+                    document.getElementById('room_no').textContent = task.location_code || '地點';
+
+                    // 檢查是否已回報
+                    if (task.status === 'completed' || task.report_is_finished) {
+                        document.body.innerHTML = `
+                            <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+                                <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
+                                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-xl font-bold text-gray-800 mb-2">任務已回報</h2>
+                                    <p class="text-gray-600 mb-6">此任務已經完成回報，請重新整理資料。</p>
+                                    <button onclick="window.close()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+                                        關閉頁面
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching task:', error);
+            }
+        }
+        main();
+
+        // 表單送出處理
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 收集資料
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // 轉換欄位名稱以符合 API 需求
+            const payload = {
+                report_is_finished: data.is_finished,
+                report_details: data.details,
+                report_has_interaction: data.has_interaction,
+                report_sentiment: data.sentiment,
+                report_remarks: data.remarks
+            };
+
+            try {
+                // 1. 將資料傳回後端 API 儲存
+                const response = await fetch(`/api/emotional-tasks/${TASK_ID}/report`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    // alert('回報成功！'); // 移除 alert，改用 UI 顯示
+                    
+                    // 2. 透過 liff.sendMessages 回傳 Flex Message 到聊天室 (模擬原本的回報結果)
+                    if (liff.isInClient()) {
+                        await liff.sendMessages([{
+                            type: 'text',
+                            text: `【任務回報完成】\n房號：${document.getElementById('room_no').textContent}\n結果：${data.is_finished}\n情緒：${data.sentiment}\n備註：${data.remarks || '無'}`
+                        }]);
+                        liff.closeWindow(); 
+                    } else {
+                        // 針對外部瀏覽器 (如 ngrok) 的處理
+                        document.body.innerHTML = `
+                            <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+                                <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
+                                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-2">回報成功！</h2>
+                                    <p class="text-gray-600 mb-6">任務狀態已更新，您可以關閉此頁面。</p>
+                                    <button onclick="window.close()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+                                        關閉頁面
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    alert('回報失敗，請重試。');
+                }
+            } catch (error) {
+                console.error('Error submitting report:', error);
+                alert('發生錯誤，請重試。');
+            }
+        });
+    </script>
+</body>
+</html>

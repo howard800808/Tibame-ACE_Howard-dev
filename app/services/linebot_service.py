@@ -23,11 +23,14 @@ from linebot.v3.webhook import SignatureValidator
 
 from app.models.task import Task, TaskStatus, TaskPriority
 
+# TODO: 請將此處替換為您的實際網域 (例如 ngrok 網址或正式站台)
+BASE_WEB_URL = "https://interinhibitive-unexceptional-lino.ngrok-free.dev"
+
 # ==========================================
 # Flex Message Templates (Merged from line_service.py)
 # ==========================================
 
-def create_universal_task_card(dept, priority, room, guest, title, content, time, remark, status='PENDING', task_id=None):
+def create_universal_task_card(dept, priority, room, guest, title, content, time, remark, status='PENDING', task_id=None, db_id=None):
     # 生成五星級飯店通用派工卡片 (萬用模板)
     
     # 優先級色碼表 (P=紅, E=黃, F=綠)
@@ -51,7 +54,8 @@ def create_universal_task_card(dept, priority, room, guest, title, content, time
             'color': '#188038',       # 綠色文字
             'btn_text': '任務完成回報 (Report)',
             'btn_color': '#188038',   # 綠色按鈕
-            'op': 'complete'
+            'op': 'complete',
+            'action_type': 'uri'
         },
         'DONE': {
             'label': '✔ 已完成',
@@ -232,6 +236,10 @@ def create_universal_task_card(dept, priority, room, guest, title, content, time
           {
             'type': 'button',
             'action': {
+                'type': 'uri',
+                'label': s_style['btn_text'],
+                'uri': f'{BASE_WEB_URL}/emotional-tasks/report/{db_id if db_id else task_id}'
+            } if s_style.get('action_type') == 'uri' else {
               'type': 'postback',
               'label': s_style['btn_text'],
               'data': f'action=task&op={s_style["op"]}&id={task_id}&dept={str(dept).split(" ")[0]}' if task_id else 'action=none'
@@ -517,7 +525,8 @@ class LineBotService:
                     time=format_time_range(emo.time_start, emo.time_end) or '-',
                     remark=emo.note or '-',
                     status=map_status(emo.status),
-                    task_id=emo.task_id
+                    task_id=emo.task_id,
+                    db_id=emo.id
                 ))
 
             return flex_messages

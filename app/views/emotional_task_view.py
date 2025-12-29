@@ -32,6 +32,21 @@ class EmotionalTaskView:
             }
         )
 
+    @staticmethod
+    async def emotional_task_report_page(request: Request, task_id: int) -> HTMLResponse:
+        """
+        渲染感動派工回報頁面
+        """
+        return templates.TemplateResponse(
+            "emotional_task_report.html",
+            {
+                "request": request,
+                "task_id": task_id,
+                "title": "任務回報"
+            }
+        )
+
+
 
 # 建立全域實例
 emotional_task_view = EmotionalTaskView()

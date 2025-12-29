@@ -131,6 +131,12 @@ async def emotional_tasks_page(request: Request):
     return await emotional_task_view.emotional_task_list_page(request)
 
 
+@app.get("/emotional-tasks/report/{task_id}", response_class=HTMLResponse)
+async def emotional_task_report_page(request: Request, task_id: int):
+    """感動派工回報頁面"""
+    return await emotional_task_view.emotional_task_report_page(request, task_id)
+
+
 # LINE Bot 管理介面路由
 @app.get("/linebot/dashboard", response_class=HTMLResponse)
 async def linebot_dashboard(request: Request):

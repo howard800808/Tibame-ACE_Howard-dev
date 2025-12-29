@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view, linebot_view
+from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view, linebot_view, emotional_task_view
 from app.core.templates import templates
 
 router = APIRouter(tags=["Pages"])
@@ -60,6 +60,18 @@ async def linebot_dashboard_page(request: Request):
 async def linebot_department_tasks(request: Request, department_code: str):
     """部門任務管理頁面"""
     return await linebot_view.department_tasks(request, department_code)
+
+
+@router.get("/emotional-tasks", response_class=HTMLResponse)
+async def emotional_tasks_page(request: Request):
+    """感動派工列表頁面 (需要登入)"""
+    return await emotional_task_view.emotional_task_list_page(request)
+
+
+@router.get("/emotional-tasks/report/{task_id}", response_class=HTMLResponse)
+async def emotional_task_report_page(request: Request, task_id: int):
+    """感動派工回報頁面"""
+    return await emotional_task_view.emotional_task_report_page(request, task_id)
 
 
 @router.get("/service-dashboard", response_class=HTMLResponse)
