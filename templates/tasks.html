@@ -180,11 +180,38 @@
 
         function renderCurrentPage() {
             const statusFilter = document.getElementById('statusFilter').value;
+            const urlParams = new URLSearchParams(window.location.search);
+            const deptFilter = urlParams.get('dept');
             
+            // 部門代碼對照表
+            const deptMapping = {
+                'GS': 'front_office',
+                'HK': 'housekeeping',
+                'CON': 'concierge',
+                'FB': 'fb',
+                'FS': 'florist',
+                'LUR': 'laundry',
+                'GAE': 'engineering',
+                'LA': 'recreation',
+                'BP': 'bakery',
+                'CBS': 'banquet',
+                'BB': 'bar',
+                'AD': 'art_design'
+            };
+
             // 1. 篩選
-            const filteredTasks = statusFilter 
-                ? allTasks.filter(t => t.status === statusFilter)
-                : allTasks;
+            let filteredTasks = allTasks;
+
+            // 部門篩選
+            if (deptFilter) {
+                const targetDept = deptMapping[deptFilter] || deptFilter;
+                filteredTasks = filteredTasks.filter(t => t.department === targetDept);
+            }
+
+            // 狀態篩選
+            if (statusFilter) {
+                filteredTasks = filteredTasks.filter(t => t.status === statusFilter);
+            }
 
             // 2. 分頁計算
             const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);

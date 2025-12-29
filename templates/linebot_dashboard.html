@@ -6,12 +6,40 @@
     <title>LINE Bot 管理 - ACE 服務管理後台</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
+        /* 調整容器最大寬度以容納 4 欄 */
+        .container {
+            max-width: 1400px !important;
+        }
+
         .department-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            /* 預設行動裝置 1 欄 */
+            grid-template-columns: 1fr;
             gap: 20px;
-            padding: 20px;
+            padding: 20px 0;
         }
+
+        /* 平板直向: 2 欄 */
+        @media (min-width: 576px) {
+            .department-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 平板橫向/小型桌面: 3 欄 */
+        @media (min-width: 992px) {
+            .department-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* 大型桌面: 4 欄 (符合 4x3 需求) */
+        @media (min-width: 1200px) {
+            .department-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
         .department-card {
             background: white;
             border: 1px solid #ddd;
@@ -35,24 +63,40 @@
             margin-bottom: 10px;
         }
         .department-stats {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .stats-row {
             display: flex;
             justify-content: space-between;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+        .stats-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .stats-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 4px;
         }
         .stat-item {
             text-align: center;
+            flex: 1;
         }
         .stat-number {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #333;
         }
         .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 11px;
+            color: #888;
         }
         .status-active {
             background-color: #28a745;
@@ -74,12 +118,31 @@
             font-size: 18px;
             color: #666;
         }
+        .clickable-stats {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .clickable-stats:hover {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 LINE Bot 管理中心</h1>
-        <p>管理 12 個部門的 LINE Bot 任務系統</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h1>🤖 LINE Bot 管理中心</h1>
+                <p>管理 12 個部門的 LINE Bot 任務系統</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="color: #666; font-size: 0.9rem;">
+                    自動刷新: <span id="countdownTimer" style="font-family: monospace; font-weight: bold; color: #007bff; font-size: 1.1rem;">10:00</span>
+                </div>
+                <button onclick="manualRefresh()" style="padding: 6px 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">重新整理</button>
+            </div>
+        </div>
         
         <div id="departments" class="department-grid">
             <div class="loading">載入中...</div>
@@ -137,9 +200,10 @@
             const card = document.createElement('div');
             card.className = 'department-card';
             
-            if (isActive) {
-                card.onclick = () => viewDepartmentTasks(dept.code);
-            }
+            // 移除整張卡片的點擊事件，改為個別區塊點擊
+            // if (isActive) {
+            //     card.onclick = () => viewDepartmentTasks(dept.code);
+            // }
 
             const statusBadge = isActive 
                 ? '<span class="status-active">已啟用</span>'
@@ -147,31 +211,63 @@
 
             let statsHTML = '';
             if (stats) {
+                // 兼容舊格式 (若後端尚未更新)
+                const general = stats.general || { total: 0, pending: 0, in_progress: 0, completed: 0 };
+                const emotional = stats.emotional || (stats.total !== undefined ? stats : { total: 0, pending: 0, in_progress: 0, completed: 0 });
+
                 statsHTML = `
                     <div class="department-stats">
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.total}</div>
-                            <div class="stat-label">總任務</div>
+                        <div class="clickable-stats" onclick="location.href='/tasks?dept=${dept.code}'; event.stopPropagation();" title="點擊查看一般任務列表">
+                            <div class="stats-title">一般任務 | <span style="font-size: 0.8em; color: #666; font-weight: normal;">點擊查看</span></div>
+                            <div class="stats-row">
+                                <div class="stat-item">
+                                    <div class="stat-number">${general.total}</div>
+                                    <div class="stat-label">總任務</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${general.pending}</div>
+                                    <div class="stat-label">待處理</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${general.in_progress}</div>
+                                    <div class="stat-label">處理中</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${general.completed}</div>
+                                    <div class="stat-label">已完成</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.pending}</div>
-                            <div class="stat-label">待處理</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.in_progress}</div>
-                            <div class="stat-label">處理中</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.completed}</div>
-                            <div class="stat-label">已完成</div>
+                        
+                        <div style="border-top: 1px dashed #eee; margin: 8px 0;"></div>
+
+                        <div class="clickable-stats" onclick="location.href='/emotional-tasks?dept=${dept.code}'; event.stopPropagation();" title="點擊查看感動任務列表">
+                            <div class="stats-title" style="color: #28a745;">感動任務 | <span style="font-size: 0.8em; color: #666; font-weight: normal;">點擊查看</span></div>
+                            <div class="stats-row">
+                                <div class="stat-item">
+                                    <div class="stat-number">${emotional.total}</div>
+                                    <div class="stat-label">總任務</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${emotional.pending}</div>
+                                    <div class="stat-label">未執行</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${emotional.in_progress}</div>
+                                    <div class="stat-label">執行中</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">${emotional.completed}</div>
+                                    <div class="stat-label">已完成</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
             }
 
             card.innerHTML = `
-                <div class="department-code">${dept.code} ${statusBadge}</div>
-                <div class="department-name">${dept.name}</div>
+                <div class="department-code">${dept.code} ${dept.name} ${statusBadge}</div>
                 <div style="font-size: 14px; color: #666;">${dept.description}</div>
                 ${statsHTML}
             `;
@@ -184,11 +280,48 @@
             window.location.href = `/linebot/departments/${code}/tasks`;
         }
 
+        // 自動刷新邏輯
+        let refreshTimer = null;
+        const REFRESH_INTERVAL_SEC = 600; // 10分鐘
+        let timeLeft = REFRESH_INTERVAL_SEC;
+
+        function startCountdown() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            updateTimerDisplay();
+            
+            refreshTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    manualRefresh();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            timeLeft = REFRESH_INTERVAL_SEC;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            if (timeLeft < 0) timeLeft = 0;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const el = document.getElementById('countdownTimer');
+            if (el) el.textContent = display;
+        }
+
+        function manualRefresh() {
+            resetTimer();
+            loadDepartments();
+        }
+
         // 頁面載入時執行
         window.onload = () => {
             loadDepartments();
-            // 每 30 秒自動更新
-            setInterval(loadDepartments, 30000);
+            startCountdown();
         };
     </script>
 </body>

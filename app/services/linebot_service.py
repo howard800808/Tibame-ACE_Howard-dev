@@ -176,7 +176,7 @@ def create_universal_task_card(dept, priority, room, guest, title, content, time
               },
               {
                 'type': 'text',
-                'text': str(time),
+                'text': str(time) if time and str(time).strip() and str(time) != 'None' else '-',
                 'size': 'sm',
                 'color': '#333333',
                 'flex': 1, 'wrap': True, 'weight': 'bold'
@@ -195,7 +195,7 @@ def create_universal_task_card(dept, priority, room, guest, title, content, time
               },
               {
                 'type': 'text',
-                'text': str(content),
+                'text': str(content) if content and str(content).strip() and str(content) != 'None' else '-',
                 'size': 'sm',
                 'color': '#555555',
                 'flex': 1, 'wrap': True
@@ -214,7 +214,7 @@ def create_universal_task_card(dept, priority, room, guest, title, content, time
               },
               {
                 'type': 'text',
-                'text': str(remark),
+                'text': str(remark) if remark and str(remark).strip() and str(remark) != 'None' else '-',
                 'size': 'sm',
                 'color': p_style['color'],
                 'flex': 1, 'wrap': True, 'weight': 'bold'
@@ -477,28 +477,26 @@ class LineBotService:
             if dept_info:
                 dept_display = f"{dept_info.code} {dept_info.name_zh}"
 
-            tasks = db.query(Task).filter(Task.department == dept_code).order_by(Task.id.desc()).all()
+            # [Modified] 只顯示感動派工任務，忽略一般任務
+            # tasks = db.query(Task).filter(Task.department == dept_code).order_by(Task.id.desc()).all()
             flex_messages: List[dict] = []
 
-            for task in tasks:
-                title = task.title if task.title else f'任務 #{task.task_uid}'
-                flex_messages.append(create_hotel_task_card(
-                    dept=dept_display,
-                    priority=map_priority(task.priority),
-                    room=task.location,
-                    guest='Guest',
-                    title=title,
-                    content=task.description,
-                    time=task.due_at.strftime('%H:%M') if task.due_at else '-',
-                    remark='',
-                    status=map_status(task.status),
-                    task_id=task.task_uid
-                ))
+            # for task in tasks:
+            #     title = task.title if task.title else f'任務 #{task.task_uid}'
+            #     flex_messages.append(create_hotel_task_card(
+            #         dept=dept_display,
+            #         priority=map_priority(task.priority),
+            #         room=task.location,
+            #         guest='Guest',
+            #         title=title,
+            #         content=task.description,
+            #         time=task.due_at.strftime('%H:%M') if task.due_at else '-',
+            #         remark='',
+            #         status=map_status(task.status),
+            #         task_id=task.task_uid
+            #     ))
 
-            if flex_messages:
-                return flex_messages
-
-            # 回退到感動派工任務
+            # 感動派工任務
             emo_tasks = (
                 db.query(EmotionalTask)
                 .filter(EmotionalTask.dept_code == dept_code)
@@ -515,9 +513,9 @@ class LineBotService:
                     room=emo.location_code or 'N/A',
                     guest=emo.project_code or 'Guest',
                     title=emo.task_title or f'任務 {emo.task_id}',
-                    content=emo.action_item or '',
-                    time=format_time_range(emo.time_start, emo.time_end),
-                    remark=emo.note or '',
+                    content=emo.action_item or '-',
+                    time=format_time_range(emo.time_start, emo.time_end) or '-',
+                    remark=emo.note or '-',
                     status=map_status(emo.status),
                     task_id=emo.task_id
                 ))
@@ -869,23 +867,63 @@ class LineBotService:
     async def get_task_statistics(self, department_code: str) -> dict:
         from app.core.database import SessionLocal
         from app.models.task import Task, TaskStatus
+        from app.models.emotional_task import EmotionalTask
         
         db = SessionLocal()
         try:
-            total = db.query(Task).filter(Task.department == department_code).count()
-            pending = db.query(Task).filter(Task.department == department_code, Task.status == TaskStatus.PENDING.value).count()
-            in_progress = db.query(Task).filter(Task.department == department_code, Task.status == TaskStatus.IN_PROGRESS.value).count()
-            completed = db.query(Task).filter(Task.department == department_code, Task.status == TaskStatus.COMPLETED.value).count()
+            # 部門代碼對照表 (Dashboard Code -> Task Table Value)
+            dept_mapping = {
+                'GS': 'front_office',
+                'HK': 'housekeeping',
+                'CON': 'concierge',
+                'FB': 'fb',
+                'FS': 'florist',
+                'LUR': 'laundry',
+                'GAE': 'engineering',
+                'LA': 'recreation',
+                'BP': 'bakery',
+                'CBS': 'banquet',
+                'BB': 'bar',
+                'AD': 'art_design'
+            }
+            query_dept = dept_mapping.get(department_code, department_code)
+
+            # 1. 一般任務 (General Tasks)
+            gen_query = db.query(Task).filter(Task.department == query_dept)
+            gen_total = gen_query.count()
+            gen_pending = gen_query.filter(Task.status == TaskStatus.PENDING.value).count()
+            gen_in_progress = gen_query.filter(Task.status == TaskStatus.IN_PROGRESS.value).count()
+            gen_completed = gen_query.filter(Task.status == TaskStatus.COMPLETED.value).count()
+
+            general_stats = {
+                'total': gen_total,
+                'pending': gen_pending,
+                'in_progress': gen_in_progress,
+                'completed': gen_completed
+            }
+
+            # 2. 感動派工任務 (Emotional Tasks)
+            emo_query = db.query(EmotionalTask).filter(EmotionalTask.dept_code == department_code)
+            emo_total = emo_query.count()
+            emo_pending = emo_query.filter(EmotionalTask.status.in_(['pending', 'assigned'])).count()
+            emo_in_progress = emo_query.filter(EmotionalTask.status == 'in_progress').count()
+            emo_completed = emo_query.filter(EmotionalTask.status == 'completed').count()
+
+            emotional_stats = {
+                'total': emo_total,
+                'pending': emo_pending,
+                'in_progress': emo_in_progress,
+                'completed': emo_completed
+            }
             
             return {
-                'total': total,
-                'pending': pending,
-                'in_progress': in_progress,
-                'completed': completed,
-                'completion_rate': round((completed / total * 100) if total else 0, 2),
+                'general': general_stats,
+                'emotional': emotional_stats
             }
-        except Exception:
-            return {'total': 0, 'pending': 0, 'in_progress': 0, 'completed': 0, 'completion_rate': 0}
+        except Exception as e:
+            print(f"Error getting stats for {department_code}: {e}")
+            empty_stats = {'total': 0, 'pending': 0, 'in_progress': 0, 'completed': 0}
+            return {'general': empty_stats, 'emotional': empty_stats}
         finally:
             db.close()
 

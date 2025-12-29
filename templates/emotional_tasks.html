@@ -111,6 +111,10 @@
                             <option value="cancelled">已取消</option>
                         </select>
                         <button class="btn-primary" onclick="loadTasks()">重新整理</button>
+                        <div style="margin-left: auto; color: #e0e0e0; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                            <span style="color: #aaa;">自動刷新:</span>
+                            <span id="countdownTimer" style="font-family: monospace; font-weight: bold; color: #fff;">10:00</span>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
@@ -151,17 +155,47 @@
         let currentPage = 1;
         const itemsPerPage = 10;
 
+        let refreshTimer = null;
+        const REFRESH_INTERVAL_SEC = 600; // 10分鐘
+        let timeLeft = REFRESH_INTERVAL_SEC;
+
         // 頁面載入時執行
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth(); // 驗證登入
             loadTasks();
-            // 自動刷新，確保與 LINE 操作同步（每 15 秒）
-            setInterval(() => {
-                loadTasks();
-            }, 15000);
+            startCountdown();
         });
 
+        function startCountdown() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            updateTimerDisplay();
+            
+            refreshTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    loadTasks();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            timeLeft = REFRESH_INTERVAL_SEC;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            if (timeLeft < 0) timeLeft = 0;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const el = document.getElementById('countdownTimer');
+            if (el) el.textContent = display;
+        }
+
         async function loadTasks() {
+            resetTimer();
             const token = localStorage.getItem('access_token');
             
             try {
@@ -187,11 +221,21 @@
 
         function renderCurrentPage() {
             const statusFilter = document.getElementById('statusFilter').value;
+            const urlParams = new URLSearchParams(window.location.search);
+            const deptFilter = urlParams.get('dept');
             
             // 1. 篩選
-            const filteredTasks = statusFilter 
-                ? allTasks.filter(t => t.status === statusFilter)
-                : allTasks;
+            let filteredTasks = allTasks;
+
+            // 部門篩選
+            if (deptFilter) {
+                filteredTasks = filteredTasks.filter(t => t.dept_code === deptFilter);
+            }
+
+            // 狀態篩選
+            if (statusFilter) {
+                filteredTasks = filteredTasks.filter(t => t.status === statusFilter);
+            }
 
             // 2. 分頁計算
             const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);

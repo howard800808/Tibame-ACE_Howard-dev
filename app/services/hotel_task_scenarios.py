@@ -122,10 +122,10 @@ task_bp_2 = create_hotel_task_card(
 )
 
 # ==========================================
-# 5. F&B 餐飲 (Food & Beverage)
+# 5. FB 餐飲 (Food & Beverage)
 # ==========================================
 task_fb_1 = create_hotel_task_card(
-    dept="F&B 餐飲",
+    dept="FB 餐飲",
     priority="P",
     room="Room 1102",
     guest="Mr. Wu",
@@ -137,7 +137,7 @@ task_fb_1 = create_hotel_task_card(
 )
 
 task_fb_2 = create_hotel_task_card(
-    dept="F&B 餐飲",
+    dept="FB 餐飲",
     priority="E",
     room="VIP Room A",
     guest="Tech Corp",
