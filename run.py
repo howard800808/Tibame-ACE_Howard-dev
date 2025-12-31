@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
+from app.core.security import decode_access_token, create_access_token
 from app.routes import init_routes
 from app.controllers.system_controller import system_controller
 from app.services.linebot_service import linebot_service
@@ -51,7 +52,31 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-New-Token"],  # 允許前端讀取新 Token
 )
+
+# 滑動會話 (Sliding Session) 中間件 - 每次請求自動延長 Token 有效期
+@app.middleware("http")
+async def sliding_session_middleware(request: Request, call_next):
+    response = await call_next(request)
+    
+    # 檢查請求中是否有 Authorization Header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            # 解碼 Token 以獲取使用者資訊
+            payload = decode_access_token(token)
+            if payload and "sub" in payload:
+                # 重新產生一個新的 Token (有效期限重新計算)
+                new_token = create_access_token(data={"sub": payload["sub"]})
+                # 將新 Token 放入 Response Header
+                response.headers["X-New-Token"] = new_token
+        except Exception:
+            # 如果 Token 無效或解碼失敗，不執行任何操作，讓後續的驗證邏輯處理
+            pass
+            
+    return response
 
 # 註冊所有路由 (API + Pages)
 init_routes(app)

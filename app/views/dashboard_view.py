@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
 from app.core.templates import templates
+from app.core.config import settings
 
 
 class DashboardView:
@@ -29,9 +30,9 @@ class DashboardView:
             "dashboard.html",
             {
                 "request": request,
-                "title": "儀表板 - ACE服務管理後台",
-                "system_name": "ACE服務管理後台",
-                "header_title": "🏠 ACE服務管理後台"
+                "title": f"儀表板 - {settings.SYSTEM_NAME}",
+                "system_name": settings.SYSTEM_NAME,
+                "header_title": f"{settings.SYSTEM_NAME}"
             }
         )
 

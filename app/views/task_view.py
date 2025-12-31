@@ -6,6 +6,7 @@ ACE服務管理後台 - 派工單列表視圖
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from app.core.templates import templates
+from app.core.config import settings
 
 
 class TaskView:
@@ -26,8 +27,8 @@ class TaskView:
             "tasks.html",
             {
                 "request": request,
-                "title": "派工單列表 - ACE服務管理後台",
-                "system_name": "ACE服務管理後台",
+                "title": f"派工單列表 - {settings.SYSTEM_NAME}",
+                "system_name": settings.SYSTEM_NAME,
                 "header_title": "📊 派工單列表"
             }
         )

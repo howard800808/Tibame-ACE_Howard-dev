@@ -6,6 +6,7 @@
 import cv2
 import json
 import tempfile
+import asyncio
 from pathlib import Path
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List
@@ -137,8 +138,8 @@ class VideoService:
                         _, buffer = cv2.imencode('.jpg', frame)
                         frame_data = buffer.tobytes()
                         
-                        # 分析幀的情緒
-                        analysis_result = emotion_service.analyze_emotion_from_image(frame_data)
+                        # 分析幀的情緒 (使用 asyncio.run 執行非同步方法)
+                        analysis_result = asyncio.run(emotion_service.analyze_emotion_from_image(frame_data))
                         
                         if "error" not in analysis_result:
                             timestamp = (frame_count / fps) if fps > 0 else 0
@@ -198,10 +199,10 @@ class VideoService:
             if AZURE_AVAILABLE and azure_transcription_service and settings.AZURE_SPEECH_API_KEY:
                 print(f"開始 Azure 語音轉文字分析: {video_path}")
                 try:
-                    success, transcript_text, segments, confidence = azure_transcription_service.transcribe_video(
+                    success, transcript_text, segments, confidence = asyncio.run(azure_transcription_service.transcribe_video(
                         video_path,
                         language='zh-TW'  # 繁體中文 (台灣)
-                    )
+                    ))
                     
                     if success and transcript_text:
                         # 構建說話人分段信息

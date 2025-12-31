@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     
     # 基本配置
     APP_NAME: str = "FastAPI Admin Backend"
+    SYSTEM_NAME: str = "ACE服務管理後台"
     VERSION: str = "1.0.0"
     DEBUG: bool = True
     
@@ -102,6 +103,7 @@ class Settings(BaseSettings):
     # Google Gemini 配置 (用於 MBTI 分析)
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-3-pro-preview"
+    MBTI_GEMINI_MODEL: str = "gemini-3-flash-preview"
     
     class Config:
         env_file = ".env"

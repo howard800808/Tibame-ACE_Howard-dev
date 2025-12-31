@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view, linebot_view
 from app.core.templates import templates
+from app.core.config import settings
 
 router = APIRouter(tags=["Pages"])
 
@@ -34,7 +35,7 @@ async def video_analysis_page(request: Request):
     """影片情緒分析頁面 (需要登入)"""
     return templates.TemplateResponse(
         "video_analysis.html",
-        {"request": request, "title": "影片情緒分析 - ACE服務管理後台"}
+        {"request": request, "title": f"影片情緒分析 - {settings.SYSTEM_NAME}"}
     )
 
 
@@ -64,12 +65,12 @@ async def linebot_department_tasks(request: Request, department_code: str):
 
 @router.get("/service-dashboard", response_class=HTMLResponse)
 async def service_dashboard_page(request: Request):
-    """ACE服務管理前台頁面"""
+    """JYS服務管理前台頁面"""
     return templates.TemplateResponse(
         "ace_service_dashboard.html",
         {
             "request": request,
-            "title": "ACE服務管理前台",
-            "header_title": "ACE服務管理前台"
+            "title": "JYS服務管理前台",
+            "header_title": "JYS服務管理前台"
         }
     )

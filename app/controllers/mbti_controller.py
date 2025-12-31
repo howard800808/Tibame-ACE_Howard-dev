@@ -11,13 +11,14 @@ class MBTIController:
     @staticmethod
     async def analyze_video(file: UploadFile = File(...)) -> Dict:
         """
-        上傳影片並進行 MBTI 分析
+        上傳影片並進行 MBTI 分析 與 表情情緒分析
+        情緒分析 使用 光譜式佈局 (Spectrum Layout)：
         
         Args:
             file: 上傳的影片檔案
             
         Returns:
-            MBTI 預測結果
+            表情情緒分析 與 MBTI 預測結果
         """
         temp_path = None
         try:
@@ -75,7 +76,7 @@ class MBTIController:
             print(f"【開始分析】")
             
             # 進行 MBTI 分析
-            result = mbti_service.predict_mbti(temp_path)
+            result = await mbti_service.predict_mbti(temp_path)
             
             print(f"【分析完成】")
             return {
@@ -167,7 +168,7 @@ class MBTIController:
             
             # 進行表情情緒分析 - 返回模擬數據
             # 實際應用中可以集成 OpenCV 或 DeepFace 等庫進行真實分析
-            emotion_result = mbti_service.analyze_emotion(temp_path)
+            emotion_result = await mbti_service.analyze_emotion(temp_path)
             
             print(f"【表情情緒分析完成】")
             return {
