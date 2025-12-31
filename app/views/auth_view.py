@@ -6,6 +6,7 @@ ACE服務管理後台 - 認證視圖
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from app.core.templates import templates
+from app.core.config import settings
 
 
 class AuthView:
@@ -26,8 +27,8 @@ class AuthView:
             "login.html",
             {
                 "request": request,
-                "title": "登入 - ACE服務管理後台",
-                "system_name": "ACE服務管理後台"
+                "title": f"登入 - {settings.SYSTEM_NAME}",
+                "system_name": settings.SYSTEM_NAME
             }
         )
 

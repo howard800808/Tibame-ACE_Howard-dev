@@ -57,7 +57,7 @@ async def analyze_emotion(
         )
     
     # 分析情緒
-    result = emotion_controller.analyze_emotion_from_image(
+    result = await emotion_controller.analyze_emotion_from_image(
         image_data=file_content,
         image_filename=file.filename,
         current_user=current_user,

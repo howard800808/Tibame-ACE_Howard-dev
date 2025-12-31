@@ -7,9 +7,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routes import auth_router, user_router, system_router, emotion_router, video_router, mbti_router, adk_router, task_router
-from app.routes.linebot_routes import router as linebot_router, webhook_unified
-from app.routes.emotional_task_routes import router as emotional_task_router
+from app.core.security import decode_access_token, create_access_token
+from app.routes import init_routes
 from app.controllers.system_controller import system_controller
 from app.views import auth_view, dashboard_view, user_view, mbti_view, task_view
 from app.views.linebot_view import linebot_view
@@ -59,96 +58,34 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-New-Token"],  # 允許前端讀取新 Token
 )
 
-# 註冊路由 (Routes -> Controllers -> Services -> Models)
-app.include_router(auth_router, prefix="/api")
-app.include_router(user_router, prefix="/api")
-app.include_router(system_router, prefix="/api")
-app.include_router(emotion_router, prefix="/api")
-app.include_router(video_router, prefix="/api")
-app.include_router(adk_router, prefix="/api")
-app.include_router(task_router, prefix="/api")
-app.include_router(emotional_task_router, prefix="/api")  # 感動派工路由
-app.include_router(linebot_router)  # LINE Bot 路由
+# 滑動會話 (Sliding Session) 中間件 - 每次請求自動延長 Token 有效期
+@app.middleware("http")
+async def sliding_session_middleware(request: Request, call_next):
+    response = await call_next(request)
+    
+    # 檢查請求中是否有 Authorization Header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            # 解碼 Token 以獲取使用者資訊
+            payload = decode_access_token(token)
+            if payload and "sub" in payload:
+                # 重新產生一個新的 Token (有效期限重新計算)
+                new_token = create_access_token(data={"sub": payload["sub"]})
+                # 將新 Token 放入 Response Header
+                response.headers["X-New-Token"] = new_token
+        except Exception:
+            # 如果 Token 無效或解碼失敗，不執行任何操作，讓後續的驗證邏輯處理
+            pass
+            
+    return response
 
-# [相容性修正] 註冊 /callback 路由以支援舊版 Webhook 設定
-app.add_api_route("/callback", webhook_unified, methods=["POST"])
-
-app.include_router(mbti_router, prefix="/api")
-
-
-# 根路由 - 重定向到 MBTI 分析頁面
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    """應用根路由 - 重定向到 MBTI 分析頁面"""
-    return await mbti_view.mbti_page(request)
-
-
-# 登入頁面路由
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    """登入頁面"""
-    return await auth_view.login_page(request)
-
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page(request: Request):
-    """儀表板頁面 (需要登入)"""
-    return await dashboard_view.dashboard_page(request)
-
-
-@app.get("/users", response_class=HTMLResponse)
-async def users_page(request: Request):
-    """使用者列表頁面 (需要登入)"""
-    return await user_view.user_list_page(request)
-
-
-@app.get("/video-analysis", response_class=HTMLResponse)
-async def video_analysis_page(request: Request):
-    """影片情緒分析頁面 (需要登入)"""
-    return templates.TemplateResponse(
-        "video_analysis.html",
-        {"request": request, "title": "影片情緒分析 - ACE服務管理後台"}
-    )
-
-
-@app.get("/mbti", response_class=HTMLResponse)
-async def mbti_analysis_page(request: Request):
-    """MBTI 影片分析頁面"""
-    return await mbti_view.mbti_page(request)
-
-
-@app.get("/tasks", response_class=HTMLResponse)
-async def tasks_page(request: Request):
-    """派工單列表頁面 (需要登入)"""
-    return await task_view.task_list_page(request)
-
-
-@app.get("/emotional-tasks", response_class=HTMLResponse)
-async def emotional_tasks_page(request: Request):
-    """感動派工列表頁面 (需要登入)"""
-    return await emotional_task_view.emotional_task_list_page(request)
-
-
-@app.get("/emotional-tasks/report/{task_id}", response_class=HTMLResponse)
-async def emotional_task_report_page(request: Request, task_id: int):
-    """感動派工回報頁面"""
-    return await emotional_task_view.emotional_task_report_page(request, task_id)
-
-
-# LINE Bot 管理介面路由
-@app.get("/linebot/dashboard", response_class=HTMLResponse)
-async def linebot_dashboard(request: Request):
-    """LINE Bot 管理儀表板"""
-    return await linebot_view.linebot_dashboard(request)
-
-
-@app.get("/linebot/departments/{department_code}/tasks", response_class=HTMLResponse)
-async def linebot_department_tasks(request: Request, department_code: str):
-    """部門任務管理頁面"""
-    return await linebot_view.department_tasks(request, department_code)
-
+# 註冊所有路由 (API + Pages)
+init_routes(app)
 
 # 全域 404 錯誤處理器
 @app.exception_handler(StarletteHTTPException)

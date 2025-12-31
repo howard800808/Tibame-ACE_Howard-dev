@@ -11,6 +11,7 @@ from app.core.dependencies import get_current_active_user
 from app.models.user import User
 from app.services.user_service import user_service
 from app.core.templates import templates
+from app.core.config import settings
 
 
 class UserView:
@@ -32,8 +33,8 @@ class UserView:
             "users.html",
             {
                 "request": request,
-                "title": "使用者管理 - ACE服務管理後台",
-                "system_name": "ACE服務管理後台",
+                "title": f"使用者管理 - {settings.SYSTEM_NAME}",
+                "system_name": settings.SYSTEM_NAME,
                 "header_title": "👥 使用者管理"
             }
         )

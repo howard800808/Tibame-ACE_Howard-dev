@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import asyncio
 from typing import Dict, List
 from google import genai
 from google.genai import types
@@ -37,7 +38,8 @@ class MBTIService:
             self.client = None
         else:
             self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            self.model_name = settings.GEMINI_MODEL
+            # 優先使用 Gemini 3.0 Flash Preview 以提升速度
+            self.model_name = settings.MBTI_GEMINI_MODEL
     
     def extract_people_from_frames(self, video_path: str, num_frames: int = 5) -> List[Dict]:
         """
@@ -94,9 +96,9 @@ class MBTIService:
         except Exception as e:
             raise Exception(f"影片處理失敗: {str(e)}")
     
-    def predict_mbti(self, video_path: str) -> Dict:
+    async def predict_mbti(self, video_path: str) -> Dict:
         """
-        使用 Gemini 2.0 Flash 分析影片中的多個人物行為，預測各自的 MBTI 類型
+        使用 Gemini 3.0 Flash 分析影片中的多個人物行為，預測各自的 MBTI 類型
         
         Args:
             video_path: 上傳的影片檔案路徑
@@ -108,14 +110,14 @@ class MBTIService:
             raise ValueError("GEMINI_API_KEY 未設置，無法進行分析")
 
         try:
-            # 提取影片幀
-            frames_data = self.extract_people_from_frames(video_path, num_frames=5)
+            # 提取影片幀 (非同步執行)
+            frames_data = await asyncio.to_thread(self.extract_people_from_frames, video_path, num_frames=5)
             
             if not frames_data:
                 raise ValueError("無法從影片中提取有效的幀")
             
             # 構建提示詞 - 要求分析多個人物
-            prompt = """請分析這些影片幀中出現的所有人物的行為特徵和性格特質，並分別預測各自的 MBTI 類型。
+            prompt = """請分析這些影片幀中出現的所有人物的情緒分析 與 行為特徵 和 性格特質，並分別預測各自的 MBTI 類型。
 
 如果影片中有多個人，請為每個人進行獨立分析。
 
@@ -123,7 +125,15 @@ class MBTIService:
 1. **性別**：根據外觀特徵判斷 (男性/女性)
 2. **年齡**：根據外觀推估年齡範圍 (如: 20-30歲)
 3. **身分**：根據行為和環境推測可能的身分 (如: 上班族、學生、創意工作者等)
-4. **MBTI 類型**：根據行為特徵分析
+4. **表情情緒** : 根據影片中的表情變化，分析其主要情緒分佈，並提供光譜式佈局 (Spectrum Layout)的情緒狀態描述
+    捨棄了原本的網格，改為 左 (Left) vs 右 (Right) 的橫向對比條。
+    中間加上了雙向箭頭與分類標籤（如：能量強度、心理穩定度），強化「對比」的概念。
+    四組核心對比：
+    能量： 疲憊 (低) vs 興奮 (高)
+    穩定： 平靜 (穩) vs 焦慮 (亂)
+    張力： 悲傷 (內縮) vs 憤怒 (外放)
+    認知： 冷漠 (關閉) vs 困惑 (運轉)
+5. **MBTI 類型**：根據行為特徵分析
 
 分析維度：
 1. **內向/外向 (I/E)**：觀察肢體語言、表達方式、與周圍環境的互動
@@ -143,6 +153,12 @@ class MBTIService:
       "identity": "推測的身分或職業（如：上班族、創意工作者等）",
       "mbti_type": "XXXX (4個字母的MBTI類型)",
       "confidence": 0-100 (預測信心度百分比),
+      "emotion_analysis": {
+        "energy": { "value": "疲憊/興奮", "score": 0-100, "description": "描述" },
+        "stability": { "value": "平靜/焦慮", "score": 0-100, "description": "描述" },
+        "tension": { "value": "悲傷/憤怒", "score": 0-100, "description": "描述" },
+        "cognition": { "value": "冷漠/困惑", "score": 0-100, "description": "描述" }
+      },
       "analysis": {
         "introversion_extroversion": {
           "type": "I或E", 
@@ -184,13 +200,14 @@ class MBTIService:
                     mime_type="image/jpeg"
                 ))
             
-            # 調用 Gemini API
-            response = self.client.models.generate_content(
+            # 調用 Gemini API (非同步執行)
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
                 model=self.model_name,
                 contents=content,
                 config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=4000,
+                    temperature=0.5,
+                    max_output_tokens=5000,
                 )
             )
             
@@ -287,6 +304,12 @@ class MBTIService:
                     "identity": "上班族",
                     "mbti_type": "ISFJ",
                     "confidence": 72,
+                    "emotion_analysis": {
+                        "energy": { "value": "平靜", "score": 40, "description": "表現出較低的能量水平，情緒穩定。" },
+                        "stability": { "value": "平靜", "score": 20, "description": "情緒波動不大，顯得相當鎮定。" },
+                        "tension": { "value": "悲傷", "score": 30, "description": "有些微的內縮情緒，但不明顯。" },
+                        "cognition": { "value": "困惑", "score": 60, "description": "似乎在思考某些問題，表現出一定程度的認知運轉。" }
+                    },
                     "analysis": {
                         "introversion_extroversion": {
                             "type": "I",
@@ -317,7 +340,7 @@ class MBTIService:
         
         return default_result
     
-    def analyze_video_frames(self, video_path: str, num_frames: int = 5) -> List[str]:
+    async def analyze_video_frames(self, video_path: str, num_frames: int = 5) -> List[str]:
         """
         從影片中提取關鍵幀並編碼為 Base64（向後兼容）
         
@@ -328,10 +351,10 @@ class MBTIService:
         Returns:
             Base64 編碼的影像列表
         """
-        frames_data = self.extract_people_from_frames(video_path, num_frames)
+        frames_data = await asyncio.to_thread(self.extract_people_from_frames, video_path, num_frames)
         return [frame['base64_data'] for frame in frames_data]
     
-    def analyze_emotion(self, video_path: str) -> Dict:
+    async def analyze_emotion(self, video_path: str) -> Dict:
         """
         分析影片中的表情情緒
         
@@ -344,6 +367,9 @@ class MBTIService:
         try:
             print(f"\n【開始表情情緒分析】")
             print(f"  影片路徑: {video_path}")
+            
+            # 模擬非同步處理
+            await asyncio.sleep(0.1)
             
             # 返回模擬表情情緒分析結果
             # 實際應用中可以集成 OpenCV、DeepFace 或其他 AI 模型進行真實分析

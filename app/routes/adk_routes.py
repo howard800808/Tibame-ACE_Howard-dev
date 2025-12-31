@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.controllers.adk_controller import adk_controller
-from app.schemas.adk_schema import ChatRequest, ChatResponse
+from app.schemas.adk_schema import ChatRequest, ChatResponse, TouchingTaskRequest
 from app.core.dependencies import get_current_user
 
 router = APIRouter(
@@ -20,4 +20,17 @@ async def chat_with_agent(
     if request.user_id == "default_user":
         request.user_id = current_user.username
         
-    return adk_controller.chat(request)
+    return await adk_controller.chat(request)
+
+@router.post("/generate-touching-task", response_model=ChatResponse)
+async def generate_touching_task(
+    request: TouchingTaskRequest,
+    current_user = Depends(get_current_user)
+):
+    """
+    生成感動服務任務
+    """
+    if request.user_id == "default_user":
+        request.user_id = current_user.username
+        
+    return await adk_controller.generate_touching_task(request)
