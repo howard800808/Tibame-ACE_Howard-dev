@@ -17,7 +17,7 @@ class EmotionController:
     """情緒辨識控制器"""
     
     @staticmethod
-    def analyze_emotion_from_image(
+    async def analyze_emotion_from_image(
         image_data: bytes,
         image_filename: str,
         current_user: User,
@@ -36,7 +36,7 @@ class EmotionController:
             EmotionDetailResponse: 分析結果
         """
         # 使用 AWS Rekognition 分析影像
-        analysis_result = emotion_service.analyze_emotion_from_image(image_data)
+        analysis_result = await emotion_service.analyze_emotion_from_image(image_data)
         print(f"AWS Analysis Result: {json.dumps(analysis_result, indent=2, ensure_ascii=False)}")
         
         # 檢查分析是否失敗

@@ -3,6 +3,21 @@
  * 包含登出、Token 刷新與權限驗證邏輯
  */
 
+// 全域攔截 Fetch 請求以處理 Token 自動更新 (滑動會話)
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+    const response = await originalFetch(...args);
+    
+    // 檢查是否有新的 Token (由後端 Sliding Session 中間件提供)
+    const newToken = response.headers.get('X-New-Token');
+    if (newToken) {
+        localStorage.setItem('access_token', newToken);
+        // console.log('Token 已自動更新');
+    }
+    
+    return response;
+};
+
 // 登出功能
 function logout() {
     localStorage.removeItem('access_token');

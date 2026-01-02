@@ -3,14 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACE服務管理後台 - 登入</title>
+    <title>JYS服務管理後台 - 登入</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css?v={{ range(1, 10000) | random }}">
 </head>
 <body class="login-body">
     <div class="login-container">
         <!-- 左側面板 -->
         <div class="left-panel">
-            <h1>🚀 ACE服務管理後台</h1>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="/static/logo.gif" alt="ACE Logo" style="max-width: 150px;">
+                <h1>JYS服務管理後台</h1>
+            </div>
             <div class="features">
                 <div class="feature-item">OAuth2.0 JWT 認證</div>
                 <div class="feature-item">安全的密碼加密</div>
@@ -41,11 +45,11 @@
                     <form onsubmit="handleLogin(event)">
                         <div class="form-group">
                             <label for="login-username">使用者名稱</label>
-                            <input type="text" id="login-username" placeholder="請輸入使用者名稱" required>
+                            <input type="text" id="login-username" placeholder="請輸入使用者名稱" required value="admin">
                         </div>
                         <div class="form-group">
                             <label for="login-password">密碼</label>
-                            <input type="password" id="login-password" placeholder="請輸入密碼" required>
+                            <input type="password" id="login-password" placeholder="請輸入密碼" required value="admin123">
                         </div>
                         <button type="submit" class="btn" id="loginBtn">
                             登入

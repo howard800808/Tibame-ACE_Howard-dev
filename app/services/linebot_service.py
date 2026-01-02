@@ -2,6 +2,7 @@ from typing import Optional, List, Dict, Tuple, Any
 from datetime import datetime
 import json
 import uuid
+import asyncio
 
 # LINE Bot SDK v3 Imports
 from linebot.v3.messaging import (
@@ -603,18 +604,21 @@ class LineBotService:
             return
         token, _ = creds
         
-        try:
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+        def _do_reply():
+            try:
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=reply_token,
+                            messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+                        )
                     )
-                )
-        except ApiException as e:
-            print(f'發送訊息失敗: {e}')
+            except ApiException as e:
+                print(f'發送訊息失敗: {e}')
+        
+        await asyncio.to_thread(_do_reply)
 
     async def reply_messages(self, department_code: str, reply_token: str, messages: list) -> bool:
         creds = self.department_creds.get(department_code)
@@ -622,20 +626,23 @@ class LineBotService:
             return False
         token, _ = creds
         
-        try:
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=messages
+        def _do_reply_multi():
+            try:
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=reply_token,
+                            messages=messages
+                        )
                     )
-                )
-            return True
-        except ApiException as e:
-            print(f'回覆多則訊息失敗: {e}')
-            return False
+                return True
+            except ApiException as e:
+                print(f'回覆多則訊息失敗: {e}')
+                return False
+
+        return await asyncio.to_thread(_do_reply_multi)
 
     async def send_push_message(self, department_code: str, user_id: str, message: str):
         creds = self.department_creds.get(department_code)
@@ -643,18 +650,21 @@ class LineBotService:
             return
         token, _ = creds
         
-        try:
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.push_message(
-                    PushMessageRequest(
-                        to=user_id,
-                        messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+        def _do_push():
+            try:
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.push_message(
+                        PushMessageRequest(
+                            to=user_id,
+                            messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+                        )
                     )
-                )
-        except ApiException as e:
-            print(f'推送訊息失敗: {e}')
+            except ApiException as e:
+                print(f'推送訊息失敗: {e}')
+        
+        await asyncio.to_thread(_do_push)
 
     async def broadcast_to_department(self, department_code: str, message: str) -> bool:
         creds = self.department_creds.get(department_code)
@@ -663,21 +673,27 @@ class LineBotService:
             return False
         token, _ = creds
         
-        try:
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.broadcast(
-                    BroadcastRequest(
-                        messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+        def _do_broadcast():
+            try:
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.broadcast(
+                        BroadcastRequest(
+                            messages=[TextMessage(text=message, quick_reply=self._get_quick_reply())]
+                        )
                     )
-                )
+                return True
+            except ApiException as e:
+                print(f'廣播失敗: {e}')
+                return False
+        
+        result = await asyncio.to_thread(_do_broadcast)
+        if result:
             self.last_errors.pop(department_code, None)
-            return True
-        except ApiException as e:
-            self.last_errors[department_code] = str(e)
-            print(f'廣播訊息失敗: {e}')
-            return False
+        else:
+            self.last_errors[department_code] = 'Broadcast failed'
+        return result
 
     async def broadcast_flex_to_department(self, department_code: str, alt_text: str, flex_contents: dict) -> bool:
         creds = self.department_creds.get(department_code)
@@ -685,20 +701,23 @@ class LineBotService:
             return False
         token, _ = creds
         
-        try:
-            container = FlexContainer.from_dict(flex_contents)
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.broadcast(
-                    BroadcastRequest(
-                        messages=[FlexMessage(alt_text=alt_text, contents=container, quick_reply=self._get_quick_reply())]
+        def _do_broadcast_flex():
+            try:
+                container = FlexContainer.from_dict(flex_contents)
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.broadcast(
+                        BroadcastRequest(
+                            messages=[FlexMessage(alt_text=alt_text, contents=container, quick_reply=self._get_quick_reply())]
+                        )
                     )
-                )
-            return True
-        except ApiException as e:
-            print(f'廣播 Flex 訊息失敗: {e}')
-            return False
+                return True
+            except ApiException as e:
+                print(f'廣播 Flex 訊息失敗: {e}')
+                return False
+        
+        return await asyncio.to_thread(_do_broadcast_flex)
 
     async def reply_flex(self, department_code: str, reply_token: str, alt_text: str, flex_contents: dict) -> bool:
         creds = self.department_creds.get(department_code)
@@ -706,21 +725,24 @@ class LineBotService:
             return False
         token, _ = creds
         
-        try:
-            container = FlexContainer.from_dict(flex_contents)
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=[FlexMessage(alt_text=alt_text, contents=container, quick_reply=self._get_quick_reply())]
+        def _do_reply_flex():
+            try:
+                container = FlexContainer.from_dict(flex_contents)
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=reply_token,
+                            messages=[FlexMessage(alt_text=alt_text, contents=container, quick_reply=self._get_quick_reply())]
+                        )
                     )
-                )
-            return True
-        except ApiException as e:
-            print(f'回覆 Flex 訊息失敗: {e}')
-            return False
+                return True
+            except ApiException as e:
+                print(f'回覆 Flex 訊息失敗: {e}')
+                return False
+        
+        return await asyncio.to_thread(_do_reply_flex)
 
     # ---------------------- 任務查詢與更新 ----------------------
     def _parse_priority(self, message: str) -> TaskPriority:
@@ -794,26 +816,29 @@ class LineBotService:
             return False
         token, _ = creds
         
-        try:
-            flex_content = self.create_task_flex_card(task)
-            container = FlexContainer.from_dict(flex_content)
-            message = FlexMessage(alt_text=f'任務: {task.title}', contents=container)
-            
-            configuration = Configuration(access_token=token)
-            with ApiClient(configuration) as api_client:
-                line_bot_api = MessagingApi(api_client)
-                if use_push and user_id:
-                    line_bot_api.push_message(
-                        PushMessageRequest(to=user_id, messages=[message])
-                    )
-                else:
-                    line_bot_api.broadcast(
-                        BroadcastRequest(messages=[message])
-                    )
-            return True
-        except ApiException as e:
-            print(f'發送 Flex 卡片失敗: {e}')
-            return False
+        def _do_send_card():
+            try:
+                flex_content = self.create_task_flex_card(task)
+                container = FlexContainer.from_dict(flex_content)
+                message = FlexMessage(alt_text=f'任務: {task.title}', contents=container)
+                
+                configuration = Configuration(access_token=token)
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    if use_push and user_id:
+                        line_bot_api.push_message(
+                            PushMessageRequest(to=user_id, messages=[message])
+                        )
+                    else:
+                        line_bot_api.broadcast(
+                            BroadcastRequest(messages=[message])
+                        )
+                return True
+            except ApiException as e:
+                print(f'發送 Flex 卡片失敗: {e}')
+                return False
+        
+        return await asyncio.to_thread(_do_send_card)
 
     async def send_task_flex_reply(self, department_code: str, reply_token: str, task: Task) -> bool:
         creds = self.department_creds.get(department_code)

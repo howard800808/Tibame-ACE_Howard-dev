@@ -8,3 +8,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     events: List[Dict[str, Any]]
+
+class TouchingTaskRequest(BaseModel):
+    people: List[Dict[str, Any]]
+    user_id: Optional[str] = "default_user"

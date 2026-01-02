@@ -533,7 +533,7 @@ async def list_all_departments():
                 "code": dept.code,
                 "name": dept.name,
                 "is_active": dept.is_active,
-                "description": dept.description
+                # "description": dept.description # DB schema 中沒有此欄位
             }
             for dept in departments
         ]

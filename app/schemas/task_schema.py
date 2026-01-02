@@ -17,6 +17,10 @@ class TaskCreate(TaskBase):
     assignee_id: Optional[int] = None
     reporter_id: Optional[int] = None
 
+class TaskDispatchRequest(TaskBase):
+    assignee_id: Optional[int] = None
+    send_line: bool = False
+
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None

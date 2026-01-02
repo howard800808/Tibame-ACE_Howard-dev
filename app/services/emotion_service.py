@@ -5,6 +5,7 @@ AWS 情緒辨識服務
 
 import boto3
 import json
+import asyncio
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -110,7 +111,7 @@ class EmotionService:
             db.refresh(db_emotion)
             return db_emotion
     
-    def analyze_emotion_from_image(self, image_data: bytes) -> Dict[str, Any]:
+    async def analyze_emotion_from_image(self, image_data: bytes) -> Dict[str, Any]:
         """
         使用 AWS Rekognition 分析影像情緒
         
@@ -127,8 +128,9 @@ class EmotionService:
             }
         
         try:
-            # 呼叫 AWS Rekognition DetectFaces API
-            response = self.rekognition_client.detect_faces(
+            # 呼叫 AWS Rekognition DetectFaces API (非同步執行)
+            response = await asyncio.to_thread(
+                self.rekognition_client.detect_faces,
                 Image={'Bytes': image_data},
                 Attributes=['ALL']
             )

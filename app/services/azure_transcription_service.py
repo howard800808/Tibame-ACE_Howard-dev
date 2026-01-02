@@ -8,6 +8,7 @@ import json
 import os
 import tempfile
 import subprocess
+import asyncio
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from app.core.config import settings
@@ -39,7 +40,7 @@ class AzureTranscriptionService:
         self.region = settings.AZURE_SPEECH_REGION
     
     @staticmethod
-    def extract_audio_from_video(video_path: str, audio_output_path: str) -> bool:
+    async def extract_audio_from_video(video_path: str, audio_output_path: str) -> bool:
         """
         使用 FFmpeg 從影片中提取音軌為 WAV 檔案
         
@@ -63,15 +64,18 @@ class AzureTranscriptionService:
             if FFMPEG_AVAILABLE:
                 try:
                     print("📊 方法 1: 使用 ffmpeg-python...")
-                    stream = ffmpeg.input(video_path)
-                    stream = ffmpeg.output(
-                        stream, 
-                        audio_output_path, 
-                        acodec='pcm_s16le',  # 16-bit PCM
-                        ar=16000,  # 16kHz (Azure Speech 推薦)
-                        ac=1  # 單聲道
-                    )
-                    ffmpeg.run(stream, quiet=True, overwrite_output=True)
+                    def _run_ffmpeg_python():
+                        stream = ffmpeg.input(video_path)
+                        stream = ffmpeg.output(
+                            stream, 
+                            audio_output_path, 
+                            acodec='pcm_s16le',  # 16-bit PCM
+                            ar=16000,  # 16kHz (Azure Speech 推薦)
+                            ac=1  # 單聲道
+                        )
+                        ffmpeg.run(stream, quiet=True, overwrite_output=True)
+                    
+                    await asyncio.to_thread(_run_ffmpeg_python)
                     
                     if os.path.exists(audio_output_path) and os.path.getsize(audio_output_path) > 0:
                         audio_size = os.path.getsize(audio_output_path)
@@ -96,11 +100,12 @@ class AzureTranscriptionService:
                 audio_output_path
             ]
             
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 command,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 分鐘超時
+                timeout=300
             )
             
             if result.returncode == 0 and os.path.exists(audio_output_path):
@@ -133,7 +138,7 @@ class AzureTranscriptionService:
             traceback.print_exc()
             return False
     
-    def transcribe_with_diarization(
+    async def transcribe_with_diarization(
         self,
         audio_path: str,
         language: str = "zh-TW"  # 繁體中文 (台灣)
@@ -172,29 +177,32 @@ class AzureTranscriptionService:
                 print(f"   Region: {self.region if self.region else '缺失'}")
                 return False, None, [], 0.0
             
-            # 建立語音配置
-            speech_config = speechsdk.SpeechConfig(
-                subscription=self.api_key,
-                region=self.region
-            )
+            def _do_transcribe():
+                # 建立語音配置
+                speech_config = speechsdk.SpeechConfig(
+                    subscription=self.api_key,
+                    region=self.region
+                )
+                
+                # 設定語言
+                speech_config.speech_recognition_language = language
+                print(f"🔤 語言設置: {language} (繁體中文)")
+                
+                # 建立音訊配置
+                audio_config = speechsdk.audio.AudioConfig(filename=audio_path)
+                
+                # 建立轉錄客戶端
+                speech_recognizer = speechsdk.SpeechRecognizer(
+                    speech_config=speech_config,
+                    audio_config=audio_config
+                )
+                
+                print(f"🎤 開始轉錄音檔...")
+                
+                # 執行轉錄
+                return speech_recognizer.recognize_once()
             
-            # 設定語言
-            speech_config.speech_recognition_language = language
-            print(f"🔤 語言設置: {language} (繁體中文)")
-            
-            # 建立音訊配置
-            audio_config = speechsdk.audio.AudioConfig(filename=audio_path)
-            
-            # 建立轉錄客戶端
-            speech_recognizer = speechsdk.SpeechRecognizer(
-                speech_config=speech_config,
-                audio_config=audio_config
-            )
-            
-            print(f"🎤 開始轉錄音檔...")
-            
-            # 執行轉錄
-            result = speech_recognizer.recognize_once()
+            result = await asyncio.to_thread(_do_transcribe)
             
             if result.reason == speechsdk.ResultReason.RecognizedSpeech:
                 transcript_text = result.text
@@ -328,7 +336,7 @@ class AzureTranscriptionService:
         
         return segments if segments else [{'speaker': '未知', 'content': '', 'confidence': 0.0}]
     
-    def transcribe_video(
+    async def transcribe_video(
         self,
         video_path: str,
         language: str = "zh-TW"
@@ -351,7 +359,8 @@ class AzureTranscriptionService:
             
             # 檢查 FFmpeg 是否可用
             try:
-                result = subprocess.run(
+                result = await asyncio.to_thread(
+                    subprocess.run,
                     ['ffmpeg', '-version'],
                     capture_output=True,
                     timeout=5
