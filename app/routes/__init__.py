@@ -7,6 +7,7 @@ from .video_routes import router as video_router
 from .mbti_routes import router as mbti_router
 from .adk_routes import router as adk_router
 from .task_routes import router as task_router
+from .emotional_task_routes import router as emotional_task_router
 from .linebot_routes import router as linebot_router, webhook_unified
 from .view_routes import router as view_router
 
@@ -23,6 +24,7 @@ def init_routes(app: FastAPI):
     app.include_router(mbti_router, prefix="/api")
     app.include_router(adk_router, prefix="/api")
     app.include_router(task_router, prefix="/api")
+    app.include_router(emotional_task_router, prefix="/api")
     
     # LINE Bot Routes
     app.include_router(linebot_router)

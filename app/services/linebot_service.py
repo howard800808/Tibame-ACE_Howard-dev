@@ -874,25 +874,47 @@ class LineBotService:
             
         from app.core.database import SessionLocal
         from app.models.task import Task, TaskReport
+        from app.models.emotional_task import EmotionalTask
         
         db = SessionLocal()
         try:
+            # 1. Try to find in General Task
             task = db.query(Task).filter(Task.task_uid == task_id).first()
             if not task and task_id.isdigit():
                 task = db.query(Task).filter(Task.id == int(task_id)).first()
                 if task:
                     task_id = task.task_uid
             
-            if not task:
+            if task:
+                new_report = TaskReport(
+                    task_id=task_id,
+                    step=step,
+                    answer=answer
+                )
+                db.add(new_report)
+                db.commit()
                 return
-            
-            new_report = TaskReport(
-                task_id=task_id,
-                step=step,
-                answer=answer
-            )
-            db.add(new_report)
-            db.commit()
+
+            # 2. Try to find in Emotional Task
+            emo = db.query(EmotionalTask).filter(EmotionalTask.task_id == task_id).first()
+            if emo:
+                # Map steps to columns
+                if step == 1:
+                    emo.report_is_finished = answer
+                elif step == 2:
+                    emo.report_details = answer
+                elif step == 3:
+                    emo.report_has_interaction = answer
+                elif step == 4:
+                    emo.report_sentiment = answer
+                elif step == 5:
+                    emo.report_remarks = answer
+                
+                db.commit()
+                return
+
+            print(f'[report] 找不到任務 task_id={task_id}')
+
         except Exception as e:
             print(f'[report] 寫入回報答案失敗 task_id={task_id}: {e}')
         finally:

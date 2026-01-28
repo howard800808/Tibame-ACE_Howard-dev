@@ -102,7 +102,7 @@ class Settings(BaseSettings):
     ADK_APP_NAME: str = "agents"
     
     # Google Gemini 配置 (用於 MBTI 分析)
-    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = "AIzaSyDXYGNuZkm3H2N7294cptqvEDXMXODHZn0"
     GEMINI_MODEL: str = "gemini-3-pro-preview"
     MBTI_GEMINI_MODEL: str = "gemini-3-flash-preview"
     

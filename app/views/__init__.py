@@ -9,6 +9,7 @@ from .user_view import user_view
 from .mbti_view import mbti_view
 from .task_view import task_view
 from .emotional_task_view import emotional_task_view
+from .linebot_view import linebot_view
 
 __all__ = [
     "auth_view",
@@ -17,4 +18,5 @@ __all__ = [
     "task_view",
     "mbti_view",
     "emotional_task_view",
+    "linebot_view",
 ]
